@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap');
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 14px;
+  --background: #ffffff;
+  --foreground: #2e496c; /* Coaction navy */
+  --card: #ffffff;
+  --card-foreground: #2e496c;
+  --popover: #ffffff;
+  --popover-foreground: #2e496c;
+  --primary: #1c5f9a; /* Coaction blue */
+  --primary-foreground: #ffffff;
+  --secondary: #F8F9FA; /* Clean light background */
+  --secondary-foreground: #2e496c;
+  --muted: #F8F9FA;
+  --muted-foreground: #6B7280;
+  --accent: #c9741c; /* Coaction orange */
+  --accent-foreground: #ffffff;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(46, 73, 108, 0.1);
+  --input: transparent;
+  --input-background: #F5F2EF;
+  --switch-background: #cbced4;
+  --font-weight-medium: 600; /* Gilroy Bold equivalent */
+  --font-weight-normal: 400;
+  --ring: #1c5f9a;
+  --chart-1: #1c5f9a;
+  --chart-2: #c9741c;
+  --chart-3: #2e496c;
+  --chart-4: #34495E;
+  --chart-5: #F8F9FA;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2e496c;
+  --sidebar-primary: #1c5f9a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #F8F9FA;
+  --sidebar-accent-foreground: #2e496c;
+  --sidebar-border: rgba(46, 73, 108, 0.1);
+  --sidebar-ring: #1c5f9a;
+  
+  /* Coaction brand colors as custom properties */
+  --color-coaction-blue: #1c5f9a;
+  --color-coaction-navy: #2e496c;
+  --color-coaction-orange: #c9741c;
+  --color-coaction-white: #FFFFFF;
+  --color-coaction-light: #F8F9FA;
+  
+  /* Legacy brand colors for backward compatibility - now mapped to new Coaction colors */
+  --color-seashell: #F8F9FA;
+  --color-stirling: #1c5f9a; /* Updated to Coaction blue */
+  --color-sedona: #c9741c; /* Updated to Coaction orange */
+  --color-granite: #2e496c; /* Updated to Coaction navy */
+  --color-sycamore: #34495E;
+}
+
+.dark {
+  --background: #2e496c; /* Coaction navy for dark mode */
+  --foreground: #F8F9FA;
+  --card: #34495E;
+  --card-foreground: #F8F9FA;
+  --popover: #34495E;
+  --popover-foreground: #F8F9FA;
+  --primary: #1c5f9a; /* Coaction blue */
+  --primary-foreground: #ffffff;
+  --secondary: #34495E;
+  --secondary-foreground: #F8F9FA;
+  --muted: #34495E;
+  --muted-foreground: #9CA3AF;
+  --accent: #c9741c; /* Coaction orange */
+  --accent-foreground: #ffffff;
+  --destructive: #EF4444;
+  --destructive-foreground: #F5F2EF;
+  --border: rgba(245, 242, 239, 0.1);
+  --input: #3C3C3C;
+  --ring: #1c5f9a;
+  --sidebar: #2e496c;
+  --sidebar-foreground: #F8F9FA;
+  --sidebar-primary: #1c5f9a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #34495E;
+  --sidebar-accent-foreground: #F8F9FA;
+  --sidebar-border: rgba(248, 249, 250, 0.1);
+  --sidebar-ring: #1c5f9a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* Coaction brand color utilities */
+  --color-coaction-blue: var(--color-coaction-blue);
+  --color-coaction-navy: var(--color-coaction-navy);
+  --color-coaction-orange: var(--color-coaction-orange);
+  --color-coaction-white: var(--color-coaction-white);
+  --color-coaction-light: var(--color-coaction-light);
+  
+  /* Legacy brand color utilities */
+  --color-seashell: var(--color-seashell);
+  --color-stirling: var(--color-stirling);
+  --color-sedona: var(--color-sedona);
+  --color-granite: var(--color-granite);
+  --color-sycamore: var(--color-sycamore);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Roboto Condensed', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+/**
+ * Base typography with brand fonts
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-3xl);
+      font-weight: 700; /* Gilroy Bold equivalent */
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+    }
+
+    h2 {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      font-size: var(--text-xl);
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    h4 {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: 400; /* Roboto Condensed Regular */
+      line-height: 1.6;
+    }
+
+    label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: 0.025em;
+    }
+
+    input {
+      font-size: var(--text-sm);
+      font-weight: 400;
+      line-height: 1.5;
+    }
+  }
+}
+
+/* Coaction brand color utilities */
+@layer utilities {
+  .bg-coaction-blue { background-color: var(--color-coaction-blue); }
+  .bg-coaction-navy { background-color: var(--color-coaction-navy); }
+  .bg-coaction-orange { background-color: var(--color-coaction-orange); }
+  .bg-coaction-white { background-color: var(--color-coaction-white); }
+  .bg-coaction-light { background-color: var(--color-coaction-light); }
+  
+  .text-coaction-blue { color: var(--color-coaction-blue); }
+  .text-coaction-navy { color: var(--color-coaction-navy); }
+  .text-coaction-orange { color: var(--color-coaction-orange); }
+  .text-coaction-white { color: var(--color-coaction-white); }
+  .text-coaction-light { color: var(--color-coaction-light); }
+  
+  .border-coaction-blue { border-color: var(--color-coaction-blue); }
+  .border-coaction-navy { border-color: var(--color-coaction-navy); }
+  .border-coaction-orange { border-color: var(--color-coaction-orange); }
+  .border-coaction-white { border-color: var(--color-coaction-white); }
+  .border-coaction-light { border-color: var(--color-coaction-light); }
+
+  /* Legacy brand color utilities for backward compatibility */
+  .bg-seashell { background-color: var(--color-seashell); }
+  .bg-stirling { background-color: var(--color-stirling); }
+  .bg-sedona { background-color: var(--color-sedona); }
+  .bg-granite { background-color: var(--color-granite); }
+  .bg-sycamore { background-color: var(--color-sycamore); }
+  
+  .text-seashell { color: var(--color-seashell); }
+  .text-stirling { color: var(--color-stirling); }
+  .text-sedona { color: var(--color-sedona); }
+  .text-granite { color: var(--color-granite); }
+  .text-sycamore { color: var(--color-sycamore); }
+  
+  .border-seashell { border-color: var(--color-seashell); }
+  .border-stirling { border-color: var(--color-stirling); }
+  .border-sedona { border-color: var(--color-sedona); }
+  .border-granite { border-color: var(--color-granite); }
+  .border-sycamore { border-color: var(--color-sycamore); }
+}
+
+html {
+  font-size: var(--font-size);
+}
