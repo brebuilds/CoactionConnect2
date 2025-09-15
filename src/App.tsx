@@ -14,6 +14,7 @@ import { ClientSetup, ClientSettings } from './components/ClientSetup';
 import { ProjectSelector } from './components/ProjectSelector';
 import { useSyncStatus } from './utils/sync';
 import { CheckCircle, AlertCircle, CloudOff } from 'lucide-react';
+import { Alert, AlertDescription } from './components/ui/alert';
 import { 
   ProjectId, 
   UserRole, 
@@ -250,19 +251,27 @@ export default function App() {
     } as const;
 
     if (blockedForCoaction[currentPage]) {
-      // Graceful block: show dashboard instead of the restricted section
+      // Graceful block: show notice and redirect to Dashboard content
       return (
-        <Dashboard 
-          user={user} 
-          onPageChange={setCurrentPage} 
-          clientSettings={clientSettings}
-          currentProject={currentProject}
-          canEdit={canEdit}
-          canManageBranding={canManageBranding}
-          canUploadKnowledge={canUploadKnowledge}
-          canComment={canComment}
-          canSendMessages={canSendMessages}
-        />
+        <>
+          <Alert className="border-accent/20 bg-accent/5 mb-4">
+            <AlertCircle className="h-4 w-4 text-accent" />
+            <AlertDescription className="text-foreground">
+              Section unavailable for Coaction Group
+            </AlertDescription>
+          </Alert>
+          <Dashboard 
+            user={user} 
+            onPageChange={setCurrentPage} 
+            clientSettings={clientSettings}
+            currentProject={currentProject}
+            canEdit={canEdit}
+            canManageBranding={canManageBranding}
+            canUploadKnowledge={canUploadKnowledge}
+            canComment={canComment}
+            canSendMessages={canSendMessages}
+          />
+        </>
       );
     }
     
