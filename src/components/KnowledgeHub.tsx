@@ -25,6 +25,7 @@ import {
   Edit
 } from 'lucide-react';
 import { KnowledgeService } from '../supabase/services';
+import { setSyncStatus } from '../utils/sync';
 
 interface KnowledgeHubProps {
   user: User;
@@ -237,6 +238,7 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
       }
     } catch (e) {
       console.warn('Knowledge upload failed, saving locally only:', e);
+      setSyncStatus({ level: 'local-only', message: 'File saved locally' });
     }
 
     const record: FileRecord = {
@@ -257,6 +259,7 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
     if (onAddActivity) {
       onAddActivity('File Upload', 'Knowledge Hub', `Uploaded ${record.fileName}`);
     }
+    setSyncStatus({ level: 'synced', message: 'File saved' });
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -283,8 +286,10 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
     setFiles(prev => prev.filter(f => f.id !== fileId));
     try {
       await KnowledgeService.deleteFile(fileId);
+      setSyncStatus({ level: 'synced', message: 'File deleted' });
     } catch (e) {
       console.warn('Knowledge delete failed:', e);
+      setSyncStatus({ level: 'local-only', message: 'File deletion saved locally' });
     }
     
     if (onAddActivity && fileToDelete) {

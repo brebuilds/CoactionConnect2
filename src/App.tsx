@@ -12,6 +12,8 @@ import { Settings } from './components/Settings';
 import { Sidebar } from './components/Sidebar';
 import { ClientSetup, ClientSettings } from './components/ClientSetup';
 import { ProjectSelector } from './components/ProjectSelector';
+import { useSyncStatus } from './utils/sync';
+import { CheckCircle, AlertCircle, CloudOff } from 'lucide-react';
 import { 
   ProjectId, 
   UserRole, 
@@ -62,6 +64,7 @@ export default function App() {
   const [currentProjectId, setCurrentProjectId] = useState<ProjectId>('coaction');
   const [loading, setLoading] = useState(true);
   const [pendingPostsCount, setPendingPostsCount] = useState(0);
+  const syncStatus = useSyncStatus();
 
   // Get current project and convert to client settings
   const currentProject = getProjectById(currentProjectId);
@@ -304,8 +307,33 @@ export default function App() {
               onProjectChange={handleProjectChange}
             />
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-foreground/70">
-                Welcome back, <span className="font-medium text-foreground">{user.name}</span>
+              <div className="text-right">
+                <div className="text-sm text-foreground/70">
+                  Welcome back, <span className="font-medium text-foreground">{user.name}</span>
+                </div>
+                <div className="text-xs mt-1 flex items-center justify-end gap-1">
+                  {syncStatus.level === 'synced' && (
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-foreground/60">Saved to cloud</span>
+                    </>
+                  )}
+                  {syncStatus.level === 'local-only' && (
+                    <>
+                      <CloudOff className="w-3.5 h-3.5 text-amber-600" />
+                      <span className="text-foreground/60">Saved locally</span>
+                    </>
+                  )}
+                  {syncStatus.level === 'error' && (
+                    <>
+                      <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                      <span className="text-foreground/60">Save error</span>
+                    </>
+                  )}
+                  {syncStatus.level === 'idle' && (
+                    <span className="text-foreground/60">All changes saved</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

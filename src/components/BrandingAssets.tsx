@@ -25,6 +25,7 @@ import { User } from '../App';
 import { Project } from './ProjectManager';
 import logo from 'figma:asset/6f68df0a2432de248c6e8d63876eaa4f24e121dd.png';
 import { AssetService, ColorService, FontService } from '../supabase/services';
+import { setSyncStatus } from '../utils/sync';
 
 interface BrandingAssetsProps {
   user: User;
@@ -372,6 +373,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
         } catch (e) {
           // if saving metadata fails, still keep local
           console.warn('Asset metadata save failed, keeping local only:', e);
+          setSyncStatus({ level: 'local-only', message: 'Brand asset saved locally' });
         }
         const logoAsset: LogoAsset = {
           id,
@@ -384,6 +386,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
           uploadedBy: user.name
         };
         uploadedAssets.push(logoAsset);
+        setSyncStatus({ level: 'synced', message: 'Brand asset saved' });
       } catch (e) {
         // Fallback to base64 local storage if storage upload fails
         console.warn('Asset upload failed, falling back to base64 local:', e);
@@ -399,6 +402,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
           uploadedBy: user.name
         };
         uploadedAssets.push(logoAsset);
+        setSyncStatus({ level: 'local-only', message: 'Brand asset saved locally' });
       }
     }
 
@@ -434,6 +438,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       }
     } catch (e) {
       console.warn('Color save failed, using local only:', e);
+      setSyncStatus({ level: 'local-only', message: 'Color saved locally' });
     }
 
     const colorAsset: ColorAsset = {
@@ -451,6 +456,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     }
     setNewColor({ name: '', hex: '#000000', usage: '', pantone: '' });
     setIsAddColorDialogOpen(false);
+    setSyncStatus({ level: 'synced', message: 'Color saved' });
   };
 
   const handleAddFont = async () => {
@@ -494,6 +500,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       }
     } catch (e) {
       console.warn('Font metadata save failed, keeping local only:', e);
+      setSyncStatus({ level: 'local-only', message: 'Font saved locally' });
     }
 
     const fontAsset: FontAsset = {
@@ -518,6 +525,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     });
     setNewFont({ name: '', weight: '', usage: '', family: '', file: null });
     setIsAddFontDialogOpen(false);
+    setSyncStatus({ level: 'synced', message: 'Font saved' });
   };
 
   const handleUpdateColor = (index: number, field: string, value: string) => {
@@ -540,8 +548,10 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     }
     try {
       if (toDelete?.id) await ColorService.deleteColor(toDelete.id);
+      setSyncStatus({ level: 'synced', message: 'Color deleted' });
     } catch (e) {
       console.warn('Color delete failed:', e);
+      setSyncStatus({ level: 'local-only', message: 'Color deletion saved locally' });
     }
   };
 
@@ -555,8 +565,10 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     }
     try {
       if (toDelete?.id) await AssetService.deleteAsset(toDelete.id);
+      setSyncStatus({ level: 'synced', message: 'Logo deleted' });
     } catch (e) {
       console.warn('Logo delete failed:', e);
+      setSyncStatus({ level: 'local-only', message: 'Logo deletion saved locally' });
     }
   };
 
@@ -570,8 +582,10 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     }
     try {
       if (toDelete?.id) await FontService.deleteFont(toDelete.id);
+      setSyncStatus({ level: 'synced', message: 'Font deleted' });
     } catch (e) {
       console.warn('Font delete failed:', e);
+      setSyncStatus({ level: 'local-only', message: 'Font deletion saved locally' });
     }
   };
 
@@ -586,7 +600,12 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     // Fire-and-forget metadata update
     const l = updatedLogos[index];
     if (l?.id) {
-      AssetService.updateAsset(l.id, { name: l.name, type: l.type, format: l.format, size: l.size } as any).catch(() => {});
+      AssetService
+        .updateAsset(l.id, { name: l.name, type: l.type, format: l.format, size: l.size } as any)
+        .then(() => setSyncStatus({ level: 'synced', message: 'Logo updated' }))
+        .catch(() => setSyncStatus({ level: 'local-only', message: 'Logo update saved locally' }));
+    } else {
+      setSyncStatus({ level: 'local-only', message: 'Logo update saved locally' });
     }
   };
 
@@ -601,7 +620,12 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     // Fire-and-forget metadata update
     const f = updatedFonts[index];
     if (f?.id) {
-      FontService.updateFont(f.id, { name: f.name, weight: f.weight, usage: f.usage, family: f.family } as any).catch(() => {});
+      FontService
+        .updateFont(f.id, { name: f.name, weight: f.weight, usage: f.usage, family: f.family } as any)
+        .then(() => setSyncStatus({ level: 'synced', message: 'Font updated' }))
+        .catch(() => setSyncStatus({ level: 'local-only', message: 'Font update saved locally' }));
+    } else {
+      setSyncStatus({ level: 'local-only', message: 'Font update saved locally' });
     }
   };
 
