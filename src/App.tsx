@@ -237,6 +237,34 @@ export default function App() {
     const canUploadKnowledge = canUserUploadKnowledge(user.role, currentProjectId);
     const canComment = canUserComment(user.role, currentProjectId);
     const canSendMessages = canUserSendMessages(user.role, currentProjectId);
+    const blockedForCoaction: Record<CurrentPage, boolean> = {
+      dashboard: false,
+      branding: false,
+      social: currentProject.id === 'coaction',
+      website: currentProject.id === 'coaction',
+      knowledge: false,
+      contact: false,
+      community: currentProject.id === 'coaction',
+      insights: currentProject.id === 'coaction',
+      settings: false,
+    } as const;
+
+    if (blockedForCoaction[currentPage]) {
+      // Graceful block: show dashboard instead of the restricted section
+      return (
+        <Dashboard 
+          user={user} 
+          onPageChange={setCurrentPage} 
+          clientSettings={clientSettings}
+          currentProject={currentProject}
+          canEdit={canEdit}
+          canManageBranding={canManageBranding}
+          canUploadKnowledge={canUploadKnowledge}
+          canComment={canComment}
+          canSendMessages={canSendMessages}
+        />
+      );
+    }
     
     switch (currentPage) {
       case 'dashboard':

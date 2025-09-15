@@ -30,7 +30,7 @@ interface SidebarProps {
   currentProject?: Project;
 }
 
-const getNavigationItems = (userRole: string) => {
+const getNavigationItems = (userRole: string, project?: Project) => {
   const baseItems = [
     {
       id: "dashboard" as CurrentPage,
@@ -48,19 +48,19 @@ const getNavigationItems = (userRole: string) => {
       id: "social" as CurrentPage,
       label: "Social Media",
       icon: Share2,
-      disabled: userRole === "CoactionViewer",
+      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
     },
     {
       id: "website" as CurrentPage,
       label: "Website",
       icon: Globe,
-      disabled: userRole === "CoactionViewer",
+      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
     },
     {
       id: "insights" as CurrentPage,
       label: "Insights",
       icon: TrendingUp,
-      disabled: userRole === "CoactionViewer",
+      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
     },
     {
       id: "knowledge" as CurrentPage,
@@ -72,7 +72,7 @@ const getNavigationItems = (userRole: string) => {
       id: "community" as CurrentPage,
       label: "Community",
       icon: Users,
-      disabled: userRole === "CoactionViewer",
+      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
     },
     {
       id: "contact" as CurrentPage,
@@ -104,7 +104,7 @@ export function Sidebar({
   pendingPostsCount = 0,
   currentProject,
 }: SidebarProps) {
-  const navigationItems = getNavigationItems(user.role);
+  const navigationItems = getNavigationItems(user.role, currentProject);
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-sedona/30 flex flex-col shadow-sm">
