@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -100,6 +101,7 @@ const engagementData = [
 export function Insights({ user }: InsightsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('visitors');
+  const [showComingSoon, setShowComingSoon] = useState(true);
 
   const isAdmin = user.role === 'Admin';
 
@@ -129,6 +131,25 @@ export function Insights({ user }: InsightsProps) {
 
   return (
     <div className="space-y-8">
+      {/* Coming Soon Dialog */}
+      <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Insights Coming Soon!
+            </DialogTitle>
+            <DialogDescription>
+              We're new here, so no insights to see yet. Analytics and reporting features are coming soon!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowComingSoon(false)}>
+              Got it!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Header */}
       <div>
         <h1 className="text-foreground flex items-center">

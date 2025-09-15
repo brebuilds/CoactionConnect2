@@ -52,6 +52,8 @@ interface CommunityPost {
 }
 
 export function Community({ user, currentProject }: CommunityProps) {
+  const [showComingSoon, setShowComingSoon] = useState(false);
+
   // Project-specific sample data
   const getProjectSamplePosts = (project?: Project): CommunityPost[] => {
     if (!project) return [];
@@ -107,28 +109,9 @@ export function Community({ user, currentProject }: CommunityProps) {
           }
         ];
       case 'tgmc':
-        return [
-          {
-            id: '1',
-            author: 'Medical Professional Network',
-            platform: 'LinkedIn',
-            date: '1 week ago',
-            content: 'Texas General Medical Center is raising the bar for advanced medical care in our region. Their investment in cutting-edge technology and expert physicians is transforming patient outcomes.',
-            engagement: { likes: 156, comments: 34, shares: 22 },
-            location: 'Austin, TX',
-            sentiment: 'positive'
-          },
-          {
-            id: '2',
-            author: 'Local Patient Advocate',
-            platform: 'Facebook',
-            date: '3 days ago',
-            content: 'Grateful for the exceptional care at Texas General Medical Center. The staff went above and beyond during my recent treatment. Highly recommend!',
-            engagement: { likes: 89, comments: 15, shares: 12 },
-            location: 'Austin, TX',
-            sentiment: 'positive'
-          }
-        ];
+        // Show coming soon dialog for TGMC
+        setShowComingSoon(true);
+        return [];
       default:
         return [];
     }
@@ -239,6 +222,25 @@ export function Community({ user, currentProject }: CommunityProps) {
 
   return (
     <div className="space-y-8">
+      {/* Coming Soon Dialog for TGMC */}
+      <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Coming Soon!
+            </DialogTitle>
+            <DialogDescription>
+              Community features for Texas General Medical Center are coming soon!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowComingSoon(false)}>
+              Got it!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Header */}
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-8 text-primary-foreground shadow-lg">
         <div className="max-w-3xl">

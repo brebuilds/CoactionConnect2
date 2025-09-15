@@ -39,8 +39,8 @@ export function Contact({ user, currentProject }: ContactProps) {
         };
       case 'zrmc':
         return {
-          email: 'admin@zionregionalmedical.com',
-          phone: '555-ZION-MED',
+          email: 'bre@brebuilds.com',
+          phone: '435-901-7560',
           subject: 'ZRMC: Contact Request',
           description: 'Healthcare services and patient support'
         };
@@ -64,8 +64,8 @@ export function Contact({ user, currentProject }: ContactProps) {
   const contactInfo = getProjectContactInfo(currentProject);
 
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
+    name: '',
+    email: '',
     message: ''
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

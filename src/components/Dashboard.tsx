@@ -121,6 +121,7 @@ export function Dashboard({ user, onPageChange, clientSettings, currentProject }
           </div>
         </CardContent>
       </Card>
+
     </div>
   );
 }
