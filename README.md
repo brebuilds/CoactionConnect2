@@ -1,9 +1,4 @@
-
-  # CoactionConnect
-
-  This is a code bundle for CoactionConnect. The original project is available at https://www.figma.com/design/MpSKGeiJop2ruJPN8Qrix1/CoactionConnect.
-
-  ## Running the code
+ ## Running the code
 
   Run `npm i` to install the dependencies.
 
