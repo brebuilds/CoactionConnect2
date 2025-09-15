@@ -37,7 +37,7 @@ export function Website({ user, currentProject }: WebsiteProps) {
       case 'zrmc':
         return "https://zrmc.org";
       case 'tgmc':
-        return "https://texasgeneralmedical.com";
+        return "https://tgmc.org";
       default:
         return "https://example.com";
     }

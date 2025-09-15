@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { User } from '../App';
 import { Project } from './ProjectManager';
-import logo from 'figma:asset/6f68df0a2432de248c6e8d63876eaa4f24e121dd.png';
 import { AssetService, ColorService, FontService } from '../supabase/services';
 import { setSyncStatus } from '../utils/sync';
 
@@ -114,7 +113,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   // Initialize brand settings from current project
   const [brandSettings, setBrandSettings] = useState<BrandSettings>({
     companyName: currentProject?.name || 'Coaction Connect',
-    primaryLogo: currentProject?.logo || logo,
+    primaryLogo: currentProject?.logo || '/CC-Main-Logo.png',
     colors: currentProject?.colors || {
       primary: '#1c5f9a',
       secondary: '#F8F9FA',
@@ -125,6 +124,49 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   });
 
   const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+
+  // Get project-specific brand assets
+  const getProjectBrandAssets = (projectId: string): LogoAsset[] => {
+    const assets: LogoAsset[] = [];
+    
+    switch (projectId) {
+      case 'coaction':
+        assets.push(
+          { id: 'cc-1', name: 'CC Main Logo', format: 'PNG', size: '2.1 MB', type: 'Main branding', asset: '/CC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'cc-2', name: 'CC Coaction Logo', format: 'JPEG', size: '1.8 MB', type: 'Alternative branding', asset: '/CC-Coaction-Logo.jpeg', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'cc-3', name: 'CC Video Logo Reveal', format: 'MP4', size: '15.2 MB', type: 'Video branding', asset: '/CC-Coaction-Video-Logo-Reveal.mp4', uploadDate: new Date(), uploadedBy: 'System' }
+        );
+        break;
+      case 'zrmc':
+        assets.push(
+          { id: 'zrmc-1', name: 'ZRMC Main Logo', format: 'PNG', size: '2.1 MB', type: 'Main branding', asset: '/ZRMC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-2', name: 'ZRMC Brand Board', format: 'JPEG', size: '3.2 MB', type: 'Brand guidelines', asset: '/ZRMC-Brand-Board.jpeg', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-3', name: 'ZRMC Icon Transparent', format: 'PNG', size: '850 KB', type: 'Icon', asset: '/ZRMC-Icon-Trans.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-4', name: 'ZRMC Logo Dark Transparent', format: 'PNG', size: '1.1 MB', type: 'Dark backgrounds', asset: '/ZRMC-Logo-Dark-Trans.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-5', name: 'ZRMC Logo on Dark Back', format: 'PNG', size: '1.0 MB', type: 'Dark backgrounds', asset: '/ZRMC-Logo-on-Dark-Back.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-6', name: 'ZRMC Stacked Logo Light', format: 'PNG', size: '1.2 MB', type: 'Light backgrounds', asset: '/ZRMC-Stacked-Logo-Light.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-7', name: 'ZRMC Social Profile', format: 'PNG', size: '900 KB', type: 'Social media', asset: '/ZRMC-Social-Profile.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-8', name: 'ZRMC Video Logo Reveal', format: 'MP4', size: '12.8 MB', type: 'Video branding', asset: '/ZRMC-Video-Logo-Reveal.mp4', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-9', name: 'ZRMC Aerial Map', format: 'JPG', size: '4.5 MB', type: 'Background imagery', asset: '/ZRMC-Aerial-Map.jpg', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-10', name: 'ZRMC Rendering', format: 'PNG', size: '2.8 MB', type: 'Background imagery', asset: '/ZRMC-Rendering.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-11', name: 'ZRMC Header Overlay', format: 'PNG', size: '1.5 MB', type: 'Header overlay', asset: '/ZRMC Header Overlay.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'zrmc-12', name: 'ZRMC Nature Back Overlay', format: 'PNG', size: '2.1 MB', type: 'Background overlay', asset: '/ZRMC-Nature-Back-Overlay.png', uploadDate: new Date(), uploadedBy: 'System' }
+        );
+        break;
+      case 'tgmc':
+        assets.push(
+          { id: 'tgmc-1', name: 'TGMC Main Logo', format: 'PNG', size: '2.1 MB', type: 'Main branding', asset: '/TGMC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'tgmc-2', name: 'TGMC Brand Board', format: 'PNG', size: '3.2 MB', type: 'Brand guidelines', asset: '/TGMC-Brand-Board.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'tgmc-3', name: 'TGMC Long Logo', format: 'PNG', size: '1.8 MB', type: 'Horizontal branding', asset: '/TGMC-Long-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'tgmc-4', name: 'TGMC Logo Back Gradient', format: 'PNG', size: '1.5 MB', type: 'Background variant', asset: '/TGMC-Logo-Back-Gradient.png', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'tgmc-5', name: 'TGMC Social Preview', format: 'JPG', size: '1.2 MB', type: 'Social media', asset: '/TGMC-Social-Preview.jpg', uploadDate: new Date(), uploadedBy: 'System' },
+          { id: 'tgmc-6', name: 'TGMC Video Logo Reveal', format: 'MP4', size: '14.5 MB', type: 'Video branding', asset: '/TGMC-Logo-Reveal.mp4', uploadDate: new Date(), uploadedBy: 'System' }
+        );
+        break;
+    }
+    
+    return assets;
+  };
 
   // Load project-specific brand settings from localStorage
   useEffect(() => {
@@ -185,7 +227,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       } else {
         setBrandSettings({
           companyName: currentProject.name,
-          primaryLogo: currentProject.logo || logo,
+          primaryLogo: currentProject.logo || '/CC-Main-Logo.png',
           colors: currentProject.colors
         });
       }
@@ -203,11 +245,9 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       if (savedLogos) {
         setLogos(JSON.parse(savedLogos));
       } else {
-        setLogos([
-          { id: '1', name: `${currentProject.name} Primary Logo`, format: 'PNG', size: '2.1 MB', type: 'Main branding', asset: currentProject.logo || logo, uploadDate: new Date(), uploadedBy: 'System' },
-          { id: '2', name: `${currentProject.name} Horizontal`, format: 'SVG', size: '180 KB', type: 'Website header', asset: currentProject.logo || logo, uploadDate: new Date(), uploadedBy: 'System' },
-          { id: '3', name: `${currentProject.name} Icon`, format: 'PNG', size: '85 KB', type: 'Social media', asset: currentProject.logo || logo, uploadDate: new Date(), uploadedBy: 'System' },
-        ]);
+        // Use project-specific brand assets
+        const projectAssets = getProjectBrandAssets(currentProject.id);
+        setLogos(projectAssets);
       }
 
       // Load saved fonts or initialize with project defaults
@@ -299,10 +339,10 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   const [colorPalette, setColorPalette] = useState<ColorAsset[]>([]);
 
   const [logos, setLogos] = useState<LogoAsset[]>([
-    { id: '1', name: 'Primary Logo', format: 'PNG', size: '2.1 MB', type: 'Main branding', asset: logo, uploadDate: new Date(), uploadedBy: 'System' },
-    { id: '2', name: 'Logo Horizontal', format: 'SVG', size: '180 KB', type: 'Website header', asset: logo, uploadDate: new Date(), uploadedBy: 'System' },
-    { id: '3', name: 'Logo Icon', format: 'PNG', size: '85 KB', type: 'Social media', asset: logo, uploadDate: new Date(), uploadedBy: 'System' },
-    { id: '4', name: 'Logo White', format: 'PNG', size: '1.8 MB', type: 'Dark backgrounds', asset: logo, uploadDate: new Date(), uploadedBy: 'System' },
+    { id: '1', name: 'Primary Logo', format: 'PNG', size: '2.1 MB', type: 'Main branding', asset: '/CC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
+    { id: '2', name: 'Logo Horizontal', format: 'SVG', size: '180 KB', type: 'Website header', asset: '/CC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
+    { id: '3', name: 'Logo Icon', format: 'PNG', size: '85 KB', type: 'Social media', asset: '/CC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
+    { id: '4', name: 'Logo White', format: 'PNG', size: '1.8 MB', type: 'Dark backgrounds', asset: '/CC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
   ]);
 
   const [fonts, setFonts] = useState<FontAsset[]>([
@@ -701,9 +741,9 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                           <SelectValue placeholder="Select primary logo" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={logo}>
+                          <SelectItem value="/CC-Main-Logo.png">
                             <div className="flex items-center gap-2">
-                              <img src={logo} alt="Default" className="w-6 h-6 object-contain" />
+                              <img src="/CC-Main-Logo.png" alt="Default" className="w-6 h-6 object-contain" />
                               Default Logo
                             </div>
                           </SelectItem>

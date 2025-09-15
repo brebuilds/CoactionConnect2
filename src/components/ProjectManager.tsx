@@ -43,15 +43,13 @@ export type Project = {
   };
 };
 
-import coactionLogo from 'figma:asset/6f68df0a2432de248c6e8d63876eaa4f24e121dd.png';
-
 // Project configurations
 export const PROJECTS: Record<ProjectId, Project> = {
   coaction: {
     id: 'coaction',
     name: 'Coaction Group',
-    description: 'Strategic partnerships and community engagement platform',
-    logo: coactionLogo,
+    description: 'The Single Source Advantage',
+    logo: '/CC-Main-Logo.png',
     colors: {
       primary: '#1c5f9a',    // Coaction blue
       secondary: '#FFFFFF',  // Coaction white
@@ -78,6 +76,7 @@ export const PROJECTS: Record<ProjectId, Project> = {
     id: 'zrmc',
     name: 'Zion Regional Medical Center',
     description: 'Healthcare excellence and community wellness initiatives',
+    logo: '/ZRMC-Main-Logo.png',
     colors: {
       primary: '#9BB1BB',    // ZRMC blue (sidebar)
       secondary: '#F7F7F7',  // ZRMC main background
@@ -104,6 +103,7 @@ export const PROJECTS: Record<ProjectId, Project> = {
     id: 'tgmc',
     name: 'Texas General Medical Center',
     description: 'Premier healthcare services and medical innovation',
+    logo: '/TGMC-Main-Logo.png',
     colors: {
       primary: '#0281AB',    // TGMC blue
       secondary: '#C5E4EF',  // TGMC light blue
@@ -212,7 +212,7 @@ export const projectToClientSettings = (project: Project): ClientSettings => {
   return {
     companyName: `${project.name} Portal`,
     companyDescription: project.description,
-    logo: project.logo,
+    logo: project.logo || '/CC-Main-Logo.png',
     colors: project.colors,
     adminCredentials: project.credentials.admin,
     advisorCredentials: project.credentials.team
@@ -238,7 +238,7 @@ export const authenticateUser = (username: string, password: string): {
       success: true,
       user: {
         id: 'super-admin-001',
-        email: 'bre@coaction.com',
+        email: 'bre@brebuilds.com',
         name: 'Bre',
         role: 'SuperAdmin'
       }
@@ -264,8 +264,8 @@ export const authenticateUser = (username: string, password: string): {
       success: true,
       user: {
         id: 'zrmc-client-001',
-        email: 'client@zionregional.com',
-        name: 'ZRMC Client',
+        email: 'zionregionalmedicalcenter@gmail.com',
+        name: 'ZRMC Team',
         role: 'ZRMCClient',
         projectId: 'zrmc'
       }
@@ -278,8 +278,8 @@ export const authenticateUser = (username: string, password: string): {
       success: true,
       user: {
         id: 'tgmc-client-001',
-        email: 'client@tgmc.com',
-        name: 'TGMC Client',
+        email: 'texasgeneralmedicalcenter@gmail.com',
+        name: 'TGMC Team',
         role: 'TGMCClient',
         projectId: 'tgmc'
       }

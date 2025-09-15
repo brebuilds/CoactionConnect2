@@ -46,7 +46,7 @@ export function Contact({ user, currentProject }: ContactProps) {
         };
       case 'tgmc':
         return {
-          email: 'contact@texasgeneralmedical.com',
+          email: 'contact@tgmc.org',
           phone: '555-TGMC-CARE',
           subject: 'TGMC: Contact Request', 
           description: 'Advanced medical care and patient inquiries'

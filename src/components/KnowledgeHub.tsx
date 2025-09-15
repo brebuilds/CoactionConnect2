@@ -45,7 +45,7 @@ interface FileRecord {
 }
 
 export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeHubProps) {
-  const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+  const isAdmin = user.role === 'SuperAdmin';
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -75,83 +75,6 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
 
   const categories = getProjectCategories(currentProject);
 
-  const getProjectSampleFiles = (project?: Project): FileRecord[] => {
-    if (!project) return [];
-    
-    switch (project.id) {
-      case 'coaction':
-        return [
-          {
-            id: '1',
-            fileName: 'Coaction Group Brand Guidelines 2024',
-            category: 'Partnership Agreements',
-            lastModified: new Date('2024-08-15'),
-            tags: ['branding', 'guidelines', 'partnerships'],
-            fileType: 'PDF',
-            fileSize: '3.2 MB',
-            uploadedBy: 'Marketing Team'
-          },
-          {
-            id: '2',
-            fileName: 'Strategic Partnership Framework',
-            category: 'Strategy Documents',
-            lastModified: new Date('2024-08-10'),
-            tags: ['strategy', 'partnerships', 'framework'],
-            fileType: 'DOCX',
-            fileSize: '1.8 MB',
-            uploadedBy: 'Strategy Team'
-          }
-        ];
-      case 'zrmc':
-        return [
-          {
-            id: '1',
-            fileName: 'ZRMC Brand Guidelines 2024',
-            category: 'Brand Guidelines',
-            lastModified: new Date('2024-08-15'),
-            tags: ['branding', 'guidelines', 'logo'],
-            fileType: 'PDF',
-            fileSize: '2.4 MB',
-            uploadedBy: 'Marketing Team'
-          },
-          {
-            id: '2',
-            fileName: 'Patient Communication Guidelines',
-            category: 'Policies',
-            lastModified: new Date('2024-08-05'),
-            tags: ['communication', 'patients', 'guidelines'],
-            fileType: 'DOCX',
-            fileSize: '890 KB',
-            uploadedBy: 'Admin Team'
-          }
-        ];
-      case 'tgmc':
-        return [
-          {
-            id: '1',
-            fileName: 'TGMC Medical Excellence Standards',
-            category: 'Medical Protocols',
-            lastModified: new Date('2024-08-15'),
-            tags: ['medical', 'standards', 'protocols'],
-            fileType: 'PDF',
-            fileSize: '4.1 MB',
-            uploadedBy: 'Medical Director'
-          },
-          {
-            id: '2',
-            fileName: 'Patient Care Guidelines',
-            category: 'Patient Materials',
-            lastModified: new Date('2024-08-08'),
-            tags: ['patient care', 'guidelines', 'procedures'],
-            fileType: 'DOCX',
-            fileSize: '1.2 MB',
-            uploadedBy: 'Nursing Staff'
-          }
-        ];
-      default:
-        return [];
-    }
-  };
 
   // Load project-specific files from Supabase (fallback to localStorage/sample)
   useEffect(() => {
@@ -184,8 +107,8 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
           }));
           setFiles(parsedFiles);
         } else {
-          const sampleFiles = getProjectSampleFiles(currentProject);
-          setFiles(sampleFiles);
+          // Start with empty array instead of sample files
+          setFiles([]);
         }
       })();
     }

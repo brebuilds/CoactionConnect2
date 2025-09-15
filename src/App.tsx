@@ -30,7 +30,6 @@ import {
   canUserComment,
   canUserSendMessages
 } from './components/ProjectManager';
-import coactionLogo from 'figma:asset/6f68df0a2432de248c6e8d63876eaa4f24e121dd.png';
 
 export type User = {
   id: string;

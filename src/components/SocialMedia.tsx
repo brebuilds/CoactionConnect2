@@ -386,6 +386,7 @@ export function SocialMedia({
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [approvalMode, setApprovalMode] = useState<'all' | 'select'>('all');
   const [selectedPostIds, setSelectedPostIds] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<'feed' | 'spreadsheet'>('feed');
 
   // CSV upload state
   const [isCsvUploadDialogOpen, setIsCsvUploadDialogOpen] = useState(false);
@@ -789,22 +790,49 @@ export function SocialMedia({
               : "View content, scheduled posts, and engagement across all platforms"}
           </p>
         </div>
-        {canEdit && (
-          <div className="flex gap-2">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Post
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsCsvUploadDialogOpen(true)}
-              className="border-primary/20 hover:bg-primary/5"
+        <div className="flex gap-2">
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-secondary rounded-lg p-1">
+            <Button
+              variant={viewMode === 'feed' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('feed')}
+              className={viewMode === 'feed' ? 'bg-primary text-primary-foreground' : 'text-foreground/70 hover:text-foreground'}
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload CSV
+              <LayoutGrid className="w-4 h-4 mr-2" />
+              Feed
+            </Button>
+            <Button
+              variant={viewMode === 'spreadsheet' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('spreadsheet')}
+              className={viewMode === 'spreadsheet' ? 'bg-primary text-primary-foreground' : 'text-foreground/70 hover:text-foreground'}
+            >
+              <Table className="w-4 h-4 mr-2" />
+              Spreadsheet
             </Button>
           </div>
-        )}
+          
+          {canEdit && (
+            <>
+              <Button 
+                onClick={() => setIsCreatePostDialogOpen(true)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Post
+              </Button>
+              <Button 
+                onClick={() => setIsCsvUploadDialogOpen(true)}
+                variant="outline"
+                className="border-primary/20 hover:bg-primary/5"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload CSV
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Content Approval Banner */}
