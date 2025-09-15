@@ -509,7 +509,13 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       uploadDate: new Date()
     };
 
-    setFonts(prev => [...prev, fontAsset]);
+    setFonts(prev => {
+      const next = [...prev, fontAsset];
+      if (currentProject) {
+        localStorage.setItem(`fonts-${currentProject.id}`, JSON.stringify(next));
+      }
+      return next;
+    });
     setNewFont({ name: '', weight: '', usage: '', family: '', file: null });
     setIsAddFontDialogOpen(false);
   };
@@ -519,12 +525,19 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const updatedColors = [...colorPalette];
     updatedColors[index] = { ...updatedColors[index], [field]: value };
     setColorPalette(updatedColors);
+    if (currentProject) {
+      localStorage.setItem(`color-palette-${currentProject.id}`, JSON.stringify(updatedColors));
+    }
   };
 
   const handleDeleteColor = async (index: number) => {
     if (!isAdmin) return;
     const toDelete = colorPalette[index];
     setColorPalette(colorPalette.filter((_, i) => i !== index));
+    if (currentProject) {
+      const next = colorPalette.filter((_, i) => i !== index);
+      localStorage.setItem(`color-palette-${currentProject.id}`, JSON.stringify(next));
+    }
     try {
       if (toDelete?.id) await ColorService.deleteColor(toDelete.id);
     } catch (e) {
@@ -535,7 +548,11 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   const handleDeleteLogo = async (index: number) => {
     if (!isAdmin) return;
     const toDelete = logos[index];
-    setLogos(logos.filter((_, i) => i !== index));
+    const next = logos.filter((_, i) => i !== index);
+    setLogos(next);
+    if (currentProject) {
+      localStorage.setItem(`logos-${currentProject.id}`, JSON.stringify(next));
+    }
     try {
       if (toDelete?.id) await AssetService.deleteAsset(toDelete.id);
     } catch (e) {
@@ -546,7 +563,11 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   const handleDeleteFont = async (index: number) => {
     if (!isAdmin) return;
     const toDelete = fonts[index];
-    setFonts(fonts.filter((_, i) => i !== index));
+    const next = fonts.filter((_, i) => i !== index);
+    setFonts(next);
+    if (currentProject) {
+      localStorage.setItem(`fonts-${currentProject.id}`, JSON.stringify(next));
+    }
     try {
       if (toDelete?.id) await FontService.deleteFont(toDelete.id);
     } catch (e) {
@@ -559,6 +580,9 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const updatedLogos = [...logos];
     updatedLogos[index] = { ...updatedLogos[index], [field]: value };
     setLogos(updatedLogos);
+    if (currentProject) {
+      localStorage.setItem(`logos-${currentProject.id}`, JSON.stringify(updatedLogos));
+    }
     // Fire-and-forget metadata update
     const l = updatedLogos[index];
     if (l?.id) {
@@ -571,6 +595,9 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const updatedFonts = [...fonts];
     updatedFonts[index] = { ...updatedFonts[index], [field]: value };
     setFonts(updatedFonts);
+    if (currentProject) {
+      localStorage.setItem(`fonts-${currentProject.id}`, JSON.stringify(updatedFonts));
+    }
     // Fire-and-forget metadata update
     const f = updatedFonts[index];
     if (f?.id) {
