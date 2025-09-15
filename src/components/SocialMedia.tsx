@@ -52,6 +52,7 @@ import {
   AlertTitle,
 } from "./ui/alert";
 import { Slider } from "./ui/slider";
+import { Label } from "./ui/label";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { toast } from "sonner";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -133,6 +134,7 @@ export function SocialMedia({
   onAddActivity,
   onPendingPostsChange,
 }: SocialMediaProps) {
+  console.log('SocialMedia component rendering with:', { user, currentProject, canEdit });
   const isAdmin = user.role === "Admin" || user.role === "SuperAdmin";
 
   // Project-specific data functions

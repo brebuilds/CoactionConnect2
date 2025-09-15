@@ -24,6 +24,7 @@ import {
   Trash2,
   Edit
 } from 'lucide-react';
+import { KnowledgeService } from '../supabase/services';
 
 interface KnowledgeHubProps {
   user: User;
@@ -151,21 +152,41 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
     }
   };
 
-  // Load project-specific files from localStorage
+  // Load project-specific files from Supabase (fallback to localStorage/sample)
   useEffect(() => {
     if (currentProject) {
-      const savedFiles = localStorage.getItem(`knowledge-files-${currentProject.id}`);
-      if (savedFiles) {
-        const parsedFiles = JSON.parse(savedFiles).map((file: any) => ({
-          ...file,
-          lastModified: new Date(file.lastModified)
-        }));
-        setFiles(parsedFiles);
-      } else {
-        // Sample data for initial load based on project
-        const sampleFiles = getProjectSampleFiles(currentProject);
-        setFiles(sampleFiles);
-      }
+      (async () => {
+        try {
+          const data = await KnowledgeService.getFiles(currentProject.id);
+          const mapped: FileRecord[] = (data || []).map(f => ({
+            id: f.id,
+            fileName: f.file_name,
+            category: f.category,
+            lastModified: new Date(f.created_at),
+            tags: f.tags || [],
+            fileType: f.file_type,
+            fileSize: f.file_size,
+            uploadedBy: f.uploaded_by
+          }));
+          if (mapped.length) {
+            setFiles(mapped);
+            return;
+          }
+        } catch (e) {
+          console.warn('Supabase knowledge fetch failed, falling back to local:', e);
+        }
+        const savedFiles = localStorage.getItem(`knowledge-files-${currentProject.id}`);
+        if (savedFiles) {
+          const parsedFiles = JSON.parse(savedFiles).map((file: any) => ({
+            ...file,
+            lastModified: new Date(file.lastModified)
+          }));
+          setFiles(parsedFiles);
+        } else {
+          const sampleFiles = getProjectSampleFiles(currentProject);
+          setFiles(sampleFiles);
+        }
+      })();
     }
   }, [currentProject]);
 
@@ -195,26 +216,46 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
     return 'text-gray-600';
   };
 
-  const handleFileUpload = () => {
+  const handleFileUpload = async () => {
     if (!newFile.fileName || !newFile.category || !newFile.file) return;
+    const tags = newFile.tags ? newFile.tags.split(',').map(tag => tag.trim()) : [];
+    const fileType = newFile.file.name.split('.').pop()?.toUpperCase() || 'FILE';
+    const fileSize = formatFileSize(newFile.file.size);
 
-    const fileRecord: FileRecord = {
-      id: Date.now().toString(),
+    let id = Date.now().toString();
+    try {
+      if (currentProject) {
+        id = await KnowledgeService.uploadFile(newFile.file, currentProject.id, {
+          file_name: newFile.fileName,
+          category: newFile.category,
+          tags,
+          file_type: fileType,
+          file_size: fileSize,
+          uploaded_by: user.name,
+          project_id: currentProject.id
+        } as any);
+      }
+    } catch (e) {
+      console.warn('Knowledge upload failed, saving locally only:', e);
+    }
+
+    const record: FileRecord = {
+      id,
       fileName: newFile.fileName,
       category: newFile.category,
       lastModified: new Date(),
-      tags: newFile.tags ? newFile.tags.split(',').map(tag => tag.trim()) : [],
-      fileType: newFile.file.name.split('.').pop()?.toUpperCase() || 'FILE',
-      fileSize: formatFileSize(newFile.file.size),
+      tags,
+      fileType,
+      fileSize,
       uploadedBy: user.name
     };
 
-    setFiles(prev => [fileRecord, ...prev]);
+    setFiles(prev => [record, ...prev]);
     setNewFile({ fileName: '', category: '', tags: '', file: null });
     setIsUploadDialogOpen(false);
 
     if (onAddActivity) {
-      onAddActivity('File Upload', 'Knowledge Hub', `Uploaded ${fileRecord.fileName}`);
+      onAddActivity('File Upload', 'Knowledge Hub', `Uploaded ${record.fileName}`);
     }
   };
 
@@ -237,9 +278,14 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
     alert(`Downloading ${file.fileName}...`);
   };
 
-  const handleDelete = (fileId: string) => {
+  const handleDelete = async (fileId: string) => {
     const fileToDelete = files.find(f => f.id === fileId);
     setFiles(prev => prev.filter(f => f.id !== fileId));
+    try {
+      await KnowledgeService.deleteFile(fileId);
+    } catch (e) {
+      console.warn('Knowledge delete failed:', e);
+    }
     
     if (onAddActivity && fileToDelete) {
       onAddActivity('File Delete', 'Knowledge Hub', `Deleted ${fileToDelete.fileName}`);

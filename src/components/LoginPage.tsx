@@ -5,7 +5,6 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Shield, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
-import { CoactionCredentials } from './CoactionCredentials';
 
 interface LoginPageProps {
   onLogin: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -38,7 +37,6 @@ export function LoginPage({ onLogin, companyName, companyLogo }: LoginPageProps)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-primary/20 flex items-center justify-center p-4 relative">
-      <CoactionCredentials />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-block mb-6">

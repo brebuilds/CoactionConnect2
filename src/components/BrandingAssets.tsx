@@ -24,6 +24,7 @@ import {
 import { User } from '../App';
 import { Project } from './ProjectManager';
 import logo from 'figma:asset/6f68df0a2432de248c6e8d63876eaa4f24e121dd.png';
+import { AssetService, ColorService, FontService } from '../supabase/services';
 
 interface BrandingAssetsProps {
   user: User;
@@ -127,6 +128,55 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   // Load project-specific brand settings from localStorage
   useEffect(() => {
     if (currentProject) {
+      // Try loading persisted data from Supabase first; fallback to localStorage/sample
+      (async () => {
+        try {
+          // Logos
+          const assets = await AssetService.getAssets(currentProject.id, 'logo');
+          const mappedLogos: LogoAsset[] = (assets || []).map(a => ({
+            id: a.id,
+            name: a.name,
+            format: a.format,
+            size: a.size,
+            type: a.type,
+            asset: a.url,
+            uploadDate: new Date(a.created_at),
+            uploadedBy: a.uploaded_by
+          }));
+          if (mappedLogos.length) setLogos(mappedLogos);
+
+          // Colors
+          const colors = await ColorService.getColors(currentProject.id);
+          const mappedColors: ColorAsset[] = (colors || []).map(c => ({
+            id: c.id,
+            name: c.name,
+            hex: c.hex,
+            usage: c.usage,
+            pantone: c.pantone || undefined,
+          }));
+          if (mappedColors.length) setColorPalette(mappedColors);
+
+          // Fonts
+          const fontsData = await FontService.getFonts(currentProject.id);
+          const mappedFonts: FontAsset[] = (fontsData || []).map(f => ({
+            id: f.id,
+            name: f.name,
+            weight: f.weight,
+            usage: f.usage,
+            family: f.family,
+            fontFile: f.url,
+            fileName: f.file_name,
+            fileSize: f.file_size,
+            uploadedBy: f.uploaded_by,
+            uploadDate: new Date(f.created_at)
+          }));
+          if (mappedFonts.length) setFonts(mappedFonts);
+        } catch (e) {
+          // Silent fallback to existing localStorage logic below
+          console.warn('Supabase fetch failed, falling back to local defaults:', e);
+        }
+      })();
+
       // Load saved settings or initialize with project defaults
       const savedSettings = localStorage.getItem(`brand-settings-${currentProject.id}`);
       if (savedSettings) {
@@ -304,18 +354,52 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const uploadedAssets: LogoAsset[] = [];
 
     for (const file of filesToUpload) {
-      const assetUrl = await handleFileUpload(file);
-      const logoAsset: LogoAsset = {
-        id: Date.now().toString() + Math.random(),
-        name: newLogo.multipleFiles.length > 1 ? `${newLogo.name} (${file.name})` : newLogo.name,
-        type: newLogo.type,
-        format: file.name.split('.').pop()?.toUpperCase() || 'FILE',
-        size: formatFileSize(file.size),
-        asset: assetUrl,
-        uploadDate: new Date(),
-        uploadedBy: user.name
-      };
-      uploadedAssets.push(logoAsset);
+      try {
+        // Try Supabase first
+        const url = currentProject ? await AssetService.uploadFile(file, currentProject.id, 'logo') : await handleFileUpload(file);
+        const meta = {
+          name: newLogo.multipleFiles.length > 1 ? `${newLogo.name} (${file.name})` : newLogo.name,
+          type: 'logo',
+          format: file.name.split('.').pop()?.toUpperCase() || 'FILE',
+          size: formatFileSize(file.size),
+          url,
+          project_id: currentProject?.id || 'coaction',
+          uploaded_by: user.name
+        } as const;
+        let id = Date.now().toString() + Math.random();
+        try {
+          id = await AssetService.saveAsset(meta as any);
+        } catch (e) {
+          // if saving metadata fails, still keep local
+          console.warn('Asset metadata save failed, keeping local only:', e);
+        }
+        const logoAsset: LogoAsset = {
+          id,
+          name: meta.name,
+          type: newLogo.type || 'logo',
+          format: meta.format,
+          size: meta.size,
+          asset: meta.url,
+          uploadDate: new Date(),
+          uploadedBy: user.name
+        };
+        uploadedAssets.push(logoAsset);
+      } catch (e) {
+        // Fallback to base64 local storage if storage upload fails
+        console.warn('Asset upload failed, falling back to base64 local:', e);
+        const assetUrl = await handleFileUpload(file);
+        const logoAsset: LogoAsset = {
+          id: Date.now().toString() + Math.random(),
+          name: newLogo.multipleFiles.length > 1 ? `${newLogo.name} (${file.name})` : newLogo.name,
+          type: newLogo.type,
+          format: file.name.split('.').pop()?.toUpperCase() || 'FILE',
+          size: formatFileSize(file.size),
+          asset: assetUrl,
+          uploadDate: new Date(),
+          uploadedBy: user.name
+        };
+        uploadedAssets.push(logoAsset);
+      }
     }
 
     const updatedLogos = [...uploadedAssets, ...logos];
@@ -334,11 +418,26 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     }
   };
 
-  const handleAddColor = () => {
+  const handleAddColor = async () => {
     if (!newColor.name || !newColor.hex) return;
 
+    let id = Date.now().toString();
+    try {
+      if (currentProject) {
+        id = await ColorService.saveColor({
+          name: newColor.name,
+          hex: newColor.hex,
+          usage: newColor.usage,
+          pantone: newColor.pantone || undefined,
+          project_id: currentProject.id
+        } as any);
+      }
+    } catch (e) {
+      console.warn('Color save failed, using local only:', e);
+    }
+
     const colorAsset: ColorAsset = {
-      id: Date.now().toString(),
+      id,
       name: newColor.name,
       hex: newColor.hex,
       usage: newColor.usage,
@@ -362,13 +461,43 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     let fileSize: string | undefined;
 
     if (newFont.file) {
-      fontFile = await handleFileUpload(newFont.file);
-      fileName = newFont.file.name;
-      fileSize = formatFileSize(newFont.file.size);
+      try {
+        if (currentProject) {
+          fontFile = await AssetService.uploadFile(newFont.file, currentProject.id, 'font');
+        } else {
+          fontFile = await handleFileUpload(newFont.file);
+        }
+        fileName = newFont.file.name;
+        fileSize = formatFileSize(newFont.file.size);
+      } catch (e) {
+        console.warn('Font upload failed, using base64 local:', e);
+        fontFile = await handleFileUpload(newFont.file);
+        fileName = newFont.file.name;
+        fileSize = formatFileSize(newFont.file.size);
+      }
+    }
+
+    let id = Date.now().toString();
+    try {
+      if (currentProject) {
+        id = await FontService.saveFont({
+          name: newFont.name,
+          weight: newFont.weight,
+          usage: newFont.usage,
+          family: newFont.family,
+          url: fontFile,
+          file_name: fileName,
+          file_size: fileSize,
+          uploaded_by: user.name,
+          project_id: currentProject.id
+        } as any);
+      }
+    } catch (e) {
+      console.warn('Font metadata save failed, keeping local only:', e);
     }
 
     const fontAsset: FontAsset = {
-      id: Date.now().toString(),
+      id,
       name: newFont.name,
       weight: newFont.weight,
       usage: newFont.usage,
@@ -392,19 +521,37 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     setColorPalette(updatedColors);
   };
 
-  const handleDeleteColor = (index: number) => {
+  const handleDeleteColor = async (index: number) => {
     if (!isAdmin) return;
+    const toDelete = colorPalette[index];
     setColorPalette(colorPalette.filter((_, i) => i !== index));
+    try {
+      if (toDelete?.id) await ColorService.deleteColor(toDelete.id);
+    } catch (e) {
+      console.warn('Color delete failed:', e);
+    }
   };
 
-  const handleDeleteLogo = (index: number) => {
+  const handleDeleteLogo = async (index: number) => {
     if (!isAdmin) return;
+    const toDelete = logos[index];
     setLogos(logos.filter((_, i) => i !== index));
+    try {
+      if (toDelete?.id) await AssetService.deleteAsset(toDelete.id);
+    } catch (e) {
+      console.warn('Logo delete failed:', e);
+    }
   };
 
-  const handleDeleteFont = (index: number) => {
+  const handleDeleteFont = async (index: number) => {
     if (!isAdmin) return;
+    const toDelete = fonts[index];
     setFonts(fonts.filter((_, i) => i !== index));
+    try {
+      if (toDelete?.id) await FontService.deleteFont(toDelete.id);
+    } catch (e) {
+      console.warn('Font delete failed:', e);
+    }
   };
 
   const handleUpdateLogo = (index: number, field: string, value: string) => {
@@ -412,6 +559,11 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const updatedLogos = [...logos];
     updatedLogos[index] = { ...updatedLogos[index], [field]: value };
     setLogos(updatedLogos);
+    // Fire-and-forget metadata update
+    const l = updatedLogos[index];
+    if (l?.id) {
+      AssetService.updateAsset(l.id, { name: l.name, type: l.type, format: l.format, size: l.size } as any).catch(() => {});
+    }
   };
 
   const handleUpdateFont = (index: number, field: string, value: string) => {
@@ -419,6 +571,11 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const updatedFonts = [...fonts];
     updatedFonts[index] = { ...updatedFonts[index], [field]: value };
     setFonts(updatedFonts);
+    // Fire-and-forget metadata update
+    const f = updatedFonts[index];
+    if (f?.id) {
+      FontService.updateFont(f.id, { name: f.name, weight: f.weight, usage: f.usage, family: f.family } as any).catch(() => {});
+    }
   };
 
   return (
@@ -983,13 +1140,37 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                           className="font-bold"
                         />
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-foreground font-bold" style={{ fontFamily: font.family }}>{font.name}</h3>
-                          {font.fontFile && (
-                            <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
-                              Custom Font
-                            </Badge>
-                          )}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-foreground font-bold" style={{ fontFamily: font.family }}>{font.name}</h3>
+                            {font.fontFile && (
+                              <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                                Custom Font
+                              </Badge>
+                            )}
+                          </div>
+                          {/* Font Preview */}
+                          <div className="p-3 bg-accent/10 rounded-lg">
+                            <p className="text-sm text-foreground/80 mb-1">Preview:</p>
+                            <p 
+                              className="text-lg font-medium" 
+                              style={{ 
+                                fontFamily: font.family,
+                                fontWeight: font.weight === 'Bold' ? 'bold' : font.weight === 'Light' ? '300' : 'normal'
+                              }}
+                            >
+                              The quick brown fox jumps over the lazy dog
+                            </p>
+                            <p 
+                              className="text-sm text-foreground/70 mt-1" 
+                              style={{ 
+                                fontFamily: font.family,
+                                fontWeight: font.weight === 'Bold' ? 'bold' : font.weight === 'Light' ? '300' : 'normal'
+                              }}
+                            >
+                              ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 1234567890
+                            </p>
+                          </div>
                         </div>
                       )}
                       {isAdmin && (
