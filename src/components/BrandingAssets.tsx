@@ -326,6 +326,28 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     },
   ]);
 
+  // Always mirror state to localStorage for reliability
+  useEffect(() => {
+    if (!currentProject) return;
+    try {
+      localStorage.setItem(`logos-${currentProject.id}`, JSON.stringify(logos));
+    } catch {}
+  }, [logos, currentProject]);
+
+  useEffect(() => {
+    if (!currentProject) return;
+    try {
+      localStorage.setItem(`color-palette-${currentProject.id}`, JSON.stringify(colorPalette));
+    } catch {}
+  }, [colorPalette, currentProject]);
+
+  useEffect(() => {
+    if (!currentProject) return;
+    try {
+      localStorage.setItem(`fonts-${currentProject.id}`, JSON.stringify(fonts));
+    } catch {}
+  }, [fonts, currentProject]);
+
   // File upload helper
   const handleFileUpload = (file: File): Promise<string> => {
     return new Promise((resolve) => {
