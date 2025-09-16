@@ -252,7 +252,7 @@ export const authenticateUser = (username: string, password: string): {
       user: {
         id: 'coaction-viewer-001',
         email: 'viewer@coaction.com',
-        name: 'Coaction Viewer',
+        name: 'Coaction',
         role: 'CoactionViewer'
       }
     };
