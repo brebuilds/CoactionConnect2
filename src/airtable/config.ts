@@ -1,20 +1,18 @@
 // Airtable Configuration for CoactionConnect2
+// Single base with linked tables approach
 
 // Get your API key from: https://airtable.com/account
 export const AIRTABLE_API_KEY = process.env.REACT_APP_AIRTABLE_API_KEY || 'your-airtable-api-key';
 
-// Get your base IDs from your Airtable base URLs
+// Single base ID - get this from your Airtable base URL
 // Example: https://airtable.com/appXXXXXXXXXXXXXX/...
-export const AIRTABLE_BASES = {
-  branding: process.env.REACT_APP_AIRTABLE_BRANDING_BASE || 'appXXXXXXXXXXXXXX',
-  knowledge: process.env.REACT_APP_AIRTABLE_KNOWLEDGE_BASE || 'appYYYYYYYYYYYYYY',
-  social: process.env.REACT_APP_AIRTABLE_SOCIAL_BASE || 'appZZZZZZZZZZZZZZ'
-};
+export const AIRTABLE_BASE_ID = process.env.REACT_APP_AIRTABLE_BASE_ID || 'appXXXXXXXXXXXXXX';
 
 export const AIRTABLE_BASE_URL = 'https://api.airtable.com/v0';
 
-// Table names in your Airtable bases
+// Table names in your single Airtable base
 export const TABLE_NAMES = {
+  projects: 'Projects',
   logos: 'Logos',
   colors: 'Colors', 
   fonts: 'Fonts',

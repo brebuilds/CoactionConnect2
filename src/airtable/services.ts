@@ -1,11 +1,11 @@
 // Airtable Services for CoactionConnect2
-// Replace Supabase/Firebase with Airtable API
+// Single base with linked tables approach
 
-import { AIRTABLE_API_KEY, AIRTABLE_BASES, AIRTABLE_BASE_URL, TABLE_NAMES } from './config';
+import { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_BASE_URL, TABLE_NAMES } from './config';
 
 // Generic Airtable API call
-const airtableRequest = async (baseId: string, table: string, method: string = 'GET', data?: any) => {
-  const url = `${AIRTABLE_BASE_URL}/${baseId}/${table}`;
+const airtableRequest = async (table: string, method: string = 'GET', data?: any) => {
+  const url = `${AIRTABLE_BASE_URL}/${AIRTABLE_BASE_ID}/${table}`;
   
   const options: RequestInit = {
     method,
@@ -26,6 +26,43 @@ const airtableRequest = async (baseId: string, table: string, method: string = '
   }
 
   return response.json();
+};
+
+// Project Management
+export const ProjectService = {
+  // Get all projects
+  getProjects: async (): Promise<any[]> => {
+    const result = await airtableRequest(TABLE_NAMES.projects, 'GET');
+    
+    return result.records.map((record: any) => ({
+      id: record.id,
+      name: record.fields.Name,
+      description: record.fields.Description,
+      status: record.fields.Status,
+      created_at: record.fields['Created Date']
+    }));
+  },
+
+  // Get project by ID
+  getProject: async (projectId: string): Promise<any> => {
+    const result = await airtableRequest(TABLE_NAMES.projects, 'GET');
+    
+    const project = result.records.find((record: any) => 
+      record.fields['Project ID'] === projectId
+    );
+    
+    if (project) {
+      return {
+        id: project.id,
+        name: project.fields.Name,
+        description: project.fields.Description,
+        status: project.fields.Status,
+        created_at: project.fields['Created Date']
+      };
+    }
+    
+    return null;
+  }
 };
 
 // Asset Management (Logos, Colors, Fonts)
@@ -49,13 +86,13 @@ export const AssetService = {
         'Format': asset.format,
         'Size': asset.size,
         'File': asset.url ? [{ url: asset.url }] : undefined,
-        'Project': projectId,
+        'Project': [projectId], // Link to Projects table
         'Uploaded By': asset.uploadedBy,
         'Upload Date': new Date().toISOString()
       }
     };
 
-    const result = await airtableRequest(AIRTABLE_BASES.branding, tableName, 'POST', record);
+    const result = await airtableRequest(tableName, 'POST', record);
     return result.id;
   },
 
@@ -64,10 +101,14 @@ export const AssetService = {
     const tableName = assetType === 'logo' ? TABLE_NAMES.logos : 
                      assetType === 'color' ? TABLE_NAMES.colors : TABLE_NAMES.fonts;
     
-    const result = await airtableRequest(AIRTABLE_BASES.branding, tableName, 'GET');
+    const result = await airtableRequest(tableName, 'GET');
     
     return result.records
-      .filter((record: any) => record.fields.Project === projectId)
+      .filter((record: any) => {
+        // Check if the linked Project field contains our projectId
+        const linkedProjects = record.fields.Project || [];
+        return linkedProjects.includes(projectId);
+      })
       .map((record: any) => ({
         id: record.id,
         name: record.fields.Name,
@@ -75,24 +116,30 @@ export const AssetService = {
         format: record.fields.Format,
         size: record.fields.Size,
         url: record.fields.File?.[0]?.url,
-        project_id: record.fields.Project,
+        project_id: projectId,
         uploaded_by: record.fields['Uploaded By'],
         created_at: record.fields['Upload Date']
       }));
   },
 
   // Update asset
-  updateAsset: async (assetId: string, updates: any): Promise<void> => {
+  updateAsset: async (assetId: string, updates: any, assetType: string): Promise<void> => {
+    const tableName = assetType === 'logo' ? TABLE_NAMES.logos : 
+                     assetType === 'color' ? TABLE_NAMES.colors : TABLE_NAMES.fonts;
+    
     const record = {
       fields: updates
     };
     
-    await airtableRequest(AIRTABLE_BASES.branding, TABLE_NAMES.logos, 'PATCH', record);
+    await airtableRequest(tableName, 'PATCH', record);
   },
 
   // Delete asset
-  deleteAsset: async (assetId: string): Promise<void> => {
-    await airtableRequest(AIRTABLE_BASES.branding, TABLE_NAMES.logos, 'DELETE');
+  deleteAsset: async (assetId: string, assetType: string): Promise<void> => {
+    const tableName = assetType === 'logo' ? TABLE_NAMES.logos : 
+                     assetType === 'color' ? TABLE_NAMES.colors : TABLE_NAMES.fonts;
+    
+    await airtableRequest(tableName, 'DELETE');
   }
 };
 
@@ -105,20 +152,23 @@ export const ColorService = {
         'Hex Code': color.hex,
         'Usage': color.usage,
         'Pantone': color.pantone || '',
-        'Project': projectId,
+        'Project': [projectId], // Link to Projects table
         'Created Date': new Date().toISOString()
       }
     };
 
-    const result = await airtableRequest(AIRTABLE_BASES.branding, TABLE_NAMES.colors, 'POST', record);
+    const result = await airtableRequest(TABLE_NAMES.colors, 'POST', record);
     return result.id;
   },
 
   getColors: async (projectId: string): Promise<any[]> => {
-    const result = await airtableRequest(AIRTABLE_BASES.branding, TABLE_NAMES.colors, 'GET');
+    const result = await airtableRequest(TABLE_NAMES.colors, 'GET');
     
     return result.records
-      .filter((record: any) => record.fields.Project === projectId)
+      .filter((record: any) => {
+        const linkedProjects = record.fields.Project || [];
+        return linkedProjects.includes(projectId);
+      })
       .map((record: any) => ({
         id: record.id,
         name: record.fields.Name,
@@ -139,20 +189,23 @@ export const FontService = {
         'Usage': font.usage,
         'Family': font.family,
         'File': font.url ? [{ url: font.url }] : undefined,
-        'Project': projectId,
+        'Project': [projectId], // Link to Projects table
         'Uploaded By': font.uploadedBy
       }
     };
 
-    const result = await airtableRequest(AIRTABLE_BASES.branding, TABLE_NAMES.fonts, 'POST', record);
+    const result = await airtableRequest(TABLE_NAMES.fonts, 'POST', record);
     return result.id;
   },
 
   getFonts: async (projectId: string): Promise<any[]> => {
-    const result = await airtableRequest(AIRTABLE_BASES.branding, TABLE_NAMES.fonts, 'GET');
+    const result = await airtableRequest(TABLE_NAMES.fonts, 'GET');
     
     return result.records
-      .filter((record: any) => record.fields.Project === projectId)
+      .filter((record: any) => {
+        const linkedProjects = record.fields.Project || [];
+        return linkedProjects.includes(projectId);
+      })
       .map((record: any) => ({
         id: record.id,
         name: record.fields.Name,
@@ -181,21 +234,24 @@ export const KnowledgeService = {
         'File Type': metadata.file_type,
         'File Size': metadata.file_size,
         'File': [{ url: fileUrl }],
-        'Project': projectId,
+        'Project': [projectId], // Link to Projects table
         'Uploaded By': metadata.uploaded_by,
         'Upload Date': new Date().toISOString()
       }
     };
 
-    const result = await airtableRequest(AIRTABLE_BASES.knowledge, TABLE_NAMES.knowledgeFiles, 'POST', record);
+    const result = await airtableRequest(TABLE_NAMES.knowledgeFiles, 'POST', record);
     return result.id;
   },
 
   getFiles: async (projectId: string): Promise<any[]> => {
-    const result = await airtableRequest(AIRTABLE_BASES.knowledge, TABLE_NAMES.knowledgeFiles, 'GET');
+    const result = await airtableRequest(TABLE_NAMES.knowledgeFiles, 'GET');
     
     return result.records
-      .filter((record: any) => record.fields.Project === projectId)
+      .filter((record: any) => {
+        const linkedProjects = record.fields.Project || [];
+        return linkedProjects.includes(projectId);
+      })
       .map((record: any) => ({
         id: record.id,
         file_name: record.fields['File Name'],
@@ -210,7 +266,7 @@ export const KnowledgeService = {
   },
 
   deleteFile: async (fileId: string): Promise<void> => {
-    await airtableRequest(AIRTABLE_BASES.knowledge, TABLE_NAMES.knowledgeFiles, 'DELETE');
+    await airtableRequest(TABLE_NAMES.knowledgeFiles, 'DELETE');
   }
 };
 
@@ -226,21 +282,22 @@ export const SocialService = {
         'Publish Date': post.publishDate,
         'Created By': post.createdBy,
         'Approved By': post.approvedBy,
-        'Project': projectId,
+        'Project': [projectId], // Link to Projects table
         'Created Date': new Date().toISOString()
       }
     };
 
-    const result = await airtableRequest(AIRTABLE_BASES.social, TABLE_NAMES.socialPosts, 'POST', record);
+    const result = await airtableRequest(TABLE_NAMES.socialPosts, 'POST', record);
     return result.id;
   },
 
   getPosts: async (projectId: string, status?: string): Promise<any[]> => {
-    const result = await airtableRequest(AIRTABLE_BASES.social, TABLE_NAMES.socialPosts, 'GET');
+    const result = await airtableRequest(TABLE_NAMES.socialPosts, 'GET');
     
     return result.records
       .filter((record: any) => {
-        const matchesProject = record.fields.Project === projectId;
+        const linkedProjects = record.fields.Project || [];
+        const matchesProject = linkedProjects.includes(projectId);
         const matchesStatus = !status || record.fields.Status === status;
         return matchesProject && matchesStatus;
       })
@@ -262,10 +319,10 @@ export const SocialService = {
       fields: updates
     };
     
-    await airtableRequest(AIRTABLE_BASES.social, TABLE_NAMES.socialPosts, 'PATCH', record);
+    await airtableRequest(TABLE_NAMES.socialPosts, 'PATCH', record);
   },
 
   deletePost: async (postId: string): Promise<void> => {
-    await airtableRequest(AIRTABLE_BASES.social, TABLE_NAMES.socialPosts, 'DELETE');
+    await airtableRequest(TABLE_NAMES.socialPosts, 'DELETE');
   }
 };
