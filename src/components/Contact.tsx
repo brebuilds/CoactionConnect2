@@ -33,28 +33,28 @@ export function Contact({ user, currentProject }: ContactProps) {
       case 'coaction':
         return {
           email: 'bre@brebuilds.com',
-          phone: '910.721.8068',
-          subject: 'Coaction Group: Contact Request',
-          description: 'Strategic partnerships and collaboration inquiries'
+          phone: '435-901-7560',
+          subject: 'Contact Request',
+          description: 'Comments, questions, or feedback'
         };
       case 'zrmc':
         return {
           email: 'bre@brebuilds.com',
           phone: '435-901-7560',
           subject: 'ZRMC: Contact Request',
-          description: 'Healthcare services and patient support'
+          description: 'Contact with comments, questions, or feedback'
         };
       case 'tgmc':
         return {
-          email: 'contact@tgmc.org',
-          phone: '555-TGMC-CARE',
+          email: 'bre@brebuilds.com',
+          phone: '435-901-7560',
           subject: 'TGMC: Contact Request', 
-          description: 'Advanced medical care and patient inquiries'
+          description: 'Contact with comments, questions, or feedback'
         };
       default:
         return {
-          email: 'support@example.com',
-          phone: '',
+          email: 'bre@brebuilds.com',
+          phone: '435-901-7560',
           subject: 'Contact Request',
           description: 'General inquiries and support'
         };
@@ -157,7 +157,7 @@ Sent via ${currentProject?.name || 'Portal'} Dashboard at ${new Date().toLocaleS
       <div>
         <h1 className="text-3xl text-foreground mb-2">Contact</h1>
         <p className="text-foreground/70">
-          Get in touch with the {currentProject?.name || 'organization'} team for support and inquiries
+          Get in touch with the tech team for support and inquiries
         </p>
       </div>
 
