@@ -22,7 +22,8 @@ import {
   Instagram,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Upload
 } from 'lucide-react';
 import { User } from '../App';
 import { Project } from './ProjectManager';
@@ -235,20 +236,102 @@ export function Community({ user, currentProject }: CommunityProps) {
           </div>
         </div>
 
-        {/* Coming Soon Message */}
+        {/* Knowledge Hub Upload Guide */}
         <Card className="border-accent/20 shadow-sm bg-background">
-          <CardContent className="p-12 text-center">
-            <Users className="w-16 h-16 text-primary/60 mx-auto mb-6" />
-            <h3 className="text-2xl text-foreground mb-4">Community Monitoring Coming Soon</h3>
-            <p className="text-foreground/70 text-lg max-w-2xl mx-auto leading-relaxed">
-              This page will search and display where TGMC is mentioned across public social media 
-              so we can keep up with community response.
-            </p>
-            <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <p className="text-sm text-foreground/60">
-                Features will include: Social media monitoring, sentiment analysis, 
-                engagement tracking, and community response management.
+          <CardContent className="p-8">
+            <div className="text-center mb-8">
+              <Users className="w-16 h-16 text-primary/60 mx-auto mb-4" />
+              <h3 className="text-2xl text-foreground mb-2">Knowledge Hub - What to Upload</h3>
+              <p className="text-foreground/70 text-lg">
+                Help us tell your hospital's story by sharing these materials with us:
               </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="space-y-4">
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Hospital Identity & Mission</h4>
+                  <ul className="text-sm text-foreground/70 space-y-1">
+                    <li>• Mission, vision, and values statements</li>
+                    <li>• Hospital name, taglines, and messaging</li>
+                    <li>• Leadership team bios and organizational structure</li>
+                    <li>• Community commitment and service area information</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Medical Services & Specialties</h4>
+                  <ul className="text-sm text-foreground/70 space-y-1">
+                    <li>• Department descriptions and service offerings</li>
+                    <li>• Physician profiles and credentials</li>
+                    <li>• Medical equipment and technology capabilities</li>
+                    <li>• Patient care protocols and quality measures</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Visual Documentation</h4>
+                  <ul className="text-sm text-foreground/70 space-y-1">
+                    <li>• Architectural renderings and construction progress photos</li>
+                    <li>• Medical equipment and facility images</li>
+                    <li>• Leadership headshots and team photos</li>
+                    <li>• Community events and groundbreaking ceremonies</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Community & Market Information</h4>
+                  <ul className="text-sm text-foreground/70 space-y-1">
+                    <li>• Market research and community health assessments</li>
+                    <li>• Demographics and service area maps</li>
+                    <li>• Competitor analysis and positioning</li>
+                    <li>• Partnership announcements and affiliations</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Regulatory & Compliance</h4>
+                  <ul className="text-sm text-foreground/70 space-y-1">
+                    <li>• Accreditation documentation</li>
+                    <li>• Licensing and certification materials</li>
+                    <li>• Quality and safety initiatives</li>
+                    <li>• Compliance policies and procedures</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Development Materials</h4>
+                  <ul className="text-sm text-foreground/70 space-y-1">
+                    <li>• Press releases and media coverage</li>
+                    <li>• Investor presentations and financial updates</li>
+                    <li>• Timeline and milestone documentation</li>
+                    <li>• Community engagement and public hearing materials</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center p-6 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+              <p className="text-foreground/80 mb-6 leading-relaxed">
+                The more information you share about your vision for healthcare in McAllen, 
+                the better we can create content that builds community trust and excitement 
+                for your hospital's opening.
+              </p>
+              
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-4 h-auto"
+                onClick={() => {
+                  // Navigate to Knowledge Hub
+                  const event = new CustomEvent('navigate', { detail: 'knowledge' });
+                  window.dispatchEvent(event);
+                }}
+              >
+                <Upload className="w-6 h-6 mr-3" />
+                Upload to Knowledge Hub
+              </Button>
             </div>
           </CardContent>
         </Card>
