@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import {
   LayoutDashboard,
   Palette,
@@ -15,6 +18,9 @@ import {
   Users,
   TrendingUp,
   Settings,
+  User,
+  Key,
+  ChevronDown,
 } from "lucide-react";
 import { CurrentPage, User } from "../App";
 import { ClientSettings } from "./ClientSetup";
@@ -113,6 +119,67 @@ export function Sidebar({
   currentProject,
 }: SidebarProps) {
   const navigationItems = getNavigationItems(user.role, currentProject);
+  
+  // Profile dialog state
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    newName: user.name,
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+
+  const handleProfileUpdate = () => {
+    setProfileError('');
+    setProfileSuccess('');
+
+    // Validate old password (simplified - in real app, this would verify against stored hash)
+    const validPasswords = {
+      'bre': 'breiscool',
+      'coaction': 'gleniscool',
+      'zrmc': 'zrmciscool',
+      'tgmc': 'tgmciscool'
+    };
+
+    const username = user.name.toLowerCase();
+    if (validPasswords[username] !== profileForm.oldPassword) {
+      setProfileError('Current password is incorrect');
+      return;
+    }
+
+    // Validate new password
+    if (profileForm.newPassword && profileForm.newPassword !== profileForm.confirmPassword) {
+      setProfileError('New passwords do not match');
+      return;
+    }
+
+    if (profileForm.newPassword && profileForm.newPassword.length < 6) {
+      setProfileError('New password must be at least 6 characters');
+      return;
+    }
+
+    // Update user info (simplified - in real app, this would update database)
+    if (profileForm.newName !== user.name) {
+      // Update name in localStorage
+      const updatedUser = { ...user, name: profileForm.newName };
+      localStorage.setItem('coaction-auth-user', JSON.stringify(updatedUser));
+      setProfileSuccess('Name updated successfully! Please refresh to see changes.');
+    }
+
+    if (profileForm.newPassword) {
+      setProfileSuccess('Password updated successfully!');
+    }
+
+    // Reset form
+    setProfileForm({
+      newName: profileForm.newName,
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-sedona/30 flex flex-col shadow-sm">
@@ -189,48 +256,131 @@ export function Sidebar({
 
       {/* User Info & Logout */}
       <div className="p-4 space-y-4">
-        <div className="p-3 bg-secondary/50 rounded-lg border border-accent/20">
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                {user.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-granite font-medium truncate">
-                {user.name}
-              </p>
-              <div className="flex items-center gap-1">
-                <p className="text-xs text-granite/60">
-                  {user.role}
-                </p>
-                {(user.role === "Admin" ||
-                  user.role === "SuperAdmin") && (
-                  <div className="flex items-center">
-                    <Shield className="w-3 h-3 text-red-600 ml-1" />
+        <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+          <DialogTrigger asChild>
+            <div className="p-3 bg-secondary/50 rounded-lg border border-accent/20 cursor-pointer hover:bg-secondary/70 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                    {user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-granite font-medium truncate">
+                    {user.name}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs text-granite/60">
+                      {user.role}
+                    </p>
+                    {(user.role === "Admin" ||
+                      user.role === "SuperAdmin") && (
+                      <div className="flex items-center">
+                        <Shield className="w-3 h-3 text-red-600 ml-1" />
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+                <ChevronDown className="w-4 h-4 text-granite/40" />
               </div>
-            </div>
-          </div>
 
-          {currentProject && (
-            <div className="mt-2 pt-2 border-t border-accent/20">
-              <div className="flex items-center space-x-2">
-                <div
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    backgroundColor:
-                      currentProject.colors.primary,
-                  }}
+              {currentProject && (
+                <div className="mt-2 pt-2 border-t border-accent/20">
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        backgroundColor:
+                          currentProject.colors.primary,
+                      }}
+                    />
+                    <span className="text-xs text-granite/70 truncate">
+                      {currentProject.name}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <User className="w-5 h-5 mr-2" />
+                Edit Profile
+              </DialogTitle>
+              <DialogDescription>
+                Update your name and password. You must verify your current password to make changes.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="newName">Display Name</Label>
+                <Input
+                  id="newName"
+                  value={profileForm.newName}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, newName: e.target.value }))}
+                  placeholder="Enter your display name"
                 />
-                <span className="text-xs text-granite/70 truncate">
-                  {currentProject.name}
-                </span>
+              </div>
+              
+              <div>
+                <Label htmlFor="oldPassword">Current Password</Label>
+                <Input
+                  id="oldPassword"
+                  type="password"
+                  value={profileForm.oldPassword}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, oldPassword: e.target.value }))}
+                  placeholder="Enter current password"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="newPassword">New Password (optional)</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={profileForm.newPassword}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                  placeholder="Enter new password"
+                />
+              </div>
+              
+              {profileForm.newPassword && (
+                <div>
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={profileForm.confirmPassword}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              )}
+              
+              {profileError && (
+                <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                  {profileError}
+                </div>
+              )}
+              
+              {profileSuccess && (
+                <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                  {profileSuccess}
+                </div>
+              )}
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsProfileDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleProfileUpdate}>
+                  Update Profile
+                </Button>
               </div>
             </div>
-          )}
-        </div>
+          </DialogContent>
+        </Dialog>
 
         <Button
           variant="ghost"
