@@ -334,7 +334,7 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
               </Button>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <div className="grid md:grid-cols-3 gap-4 mb-8">
               <div className="space-y-4">
                 <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <h4 className="font-semibold text-foreground mb-2">Hospital Identity & Mission</h4>
@@ -343,16 +343,6 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                     <li>• Hospital name, taglines, and messaging</li>
                     <li>• Leadership team bios and organizational structure</li>
                     <li>• Community commitment and service area information</li>
-                  </ul>
-                </div>
-
-                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <h4 className="font-semibold text-foreground mb-2">Medical Services & Specialties</h4>
-                  <ul className="text-sm text-foreground/70 space-y-1">
-                    <li>• Department descriptions and service offerings</li>
-                    <li>• Physician profiles and credentials</li>
-                    <li>• Medical equipment and technology capabilities</li>
-                    <li>• Patient care protocols and quality measures</li>
                   </ul>
                 </div>
 
@@ -369,12 +359,12 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
 
               <div className="space-y-4">
                 <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <h4 className="font-semibold text-foreground mb-2">Community & Market Information</h4>
+                  <h4 className="font-semibold text-foreground mb-2">Medical Services & Specialties</h4>
                   <ul className="text-sm text-foreground/70 space-y-1">
-                    <li>• Market research and community health assessments</li>
-                    <li>• Demographics and service area maps</li>
-                    <li>• Competitor analysis and positioning</li>
-                    <li>• Partnership announcements and affiliations</li>
+                    <li>• Department descriptions and service offerings</li>
+                    <li>• Physician profiles and credentials</li>
+                    <li>• Medical equipment and technology capabilities</li>
+                    <li>• Patient care protocols and quality measures</li>
                   </ul>
                 </div>
 
@@ -385,6 +375,18 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                     <li>• Licensing and certification materials</li>
                     <li>• Quality and safety initiatives</li>
                     <li>• Compliance policies and procedures</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Community & Market Information</h4>
+                  <ul className="text-sm text-foreground/70 space-y-1">
+                    <li>• Market research and community health assessments</li>
+                    <li>• Demographics and service area maps</li>
+                    <li>• Competitor analysis and positioning</li>
+                    <li>• Partnership announcements and affiliations</li>
                   </ul>
                 </div>
 
