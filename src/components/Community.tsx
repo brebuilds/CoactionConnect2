@@ -52,7 +52,6 @@ interface CommunityPost {
 }
 
 export function Community({ user, currentProject }: CommunityProps) {
-  const [showComingSoon, setShowComingSoon] = useState(false);
 
   // Project-specific sample data
   const getProjectSamplePosts = (project?: Project): CommunityPost[] => {
@@ -220,27 +219,46 @@ export function Community({ user, currentProject }: CommunityProps) {
 
 
 
+  // Show coming soon message for TGMC
+  if (currentProject?.id === 'tgmc') {
+    return (
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-8 text-primary-foreground shadow-lg">
+          <div className="max-w-3xl">
+            <h1 className="text-3xl mb-2 flex items-center">
+              <Users className="w-8 h-8 mr-3" />
+              Community Mentions
+            </h1>
+            <p className="text-primary-foreground/90 text-lg">
+              Track community engagement and social media mentions
+            </p>
+          </div>
+        </div>
+
+        {/* Coming Soon Message */}
+        <Card className="border-accent/20 shadow-sm bg-background">
+          <CardContent className="p-12 text-center">
+            <Users className="w-16 h-16 text-primary/60 mx-auto mb-6" />
+            <h3 className="text-2xl text-foreground mb-4">Community Monitoring Coming Soon</h3>
+            <p className="text-foreground/70 text-lg max-w-2xl mx-auto leading-relaxed">
+              This page will search and display where TGMC is mentioned across public social media 
+              so we can keep up with community response.
+            </p>
+            <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-sm text-foreground/60">
+                Features will include: Social media monitoring, sentiment analysis, 
+                engagement tracking, and community response management.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      {/* Coming Soon Dialog for TGMC */}
-      <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              Coming Soon!
-            </DialogTitle>
-            <DialogDescription>
-              Community features for Texas General Medical Center are coming soon!
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end">
-            <Button onClick={() => setShowComingSoon(false)}>
-              Got it!
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
       {/* Header */}
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-8 text-primary-foreground shadow-lg">
         <div className="max-w-3xl">
