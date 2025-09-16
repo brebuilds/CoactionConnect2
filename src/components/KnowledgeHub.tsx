@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -39,25 +40,21 @@ interface KnowledgeHubProps {
 interface FileRecord {
   id: string;
   fileName: string;
-  category: string;
   lastModified: Date;
-  tags: string[];
   fileType: string;
   fileSize: string;
   uploadedBy: string;
+  notes?: string;
 }
 
 export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKnowledge = true, canComment = true, onAddActivity }: KnowledgeHubProps) {
   const isAdmin = user.role === 'SuperAdmin';
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [newFile, setNewFile] = useState({
-    fileName: '',
-    category: '',
-    tags: '',
-    file: null as File | null
+    file: null as File | null,
+    notes: ''
   });
 
   // Project-specific categories
@@ -144,8 +141,9 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
   };
 
   const handleFileUpload = async () => {
-    if (!newFile.fileName || !newFile.category || !newFile.file) return;
-    const tags = newFile.tags ? newFile.tags.split(',').map(tag => tag.trim()) : [];
+    if (!newFile.file) return;
+    
+    const fileName = newFile.file.name;
     const fileType = newFile.file.name.split('.').pop()?.toUpperCase() || 'FILE';
     const fileSize = formatFileSize(newFile.file.size);
 
@@ -153,9 +151,9 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
     try {
       if (currentProject) {
         id = await KnowledgeService.uploadFile(newFile.file, currentProject.id, {
-          file_name: newFile.fileName,
-          category: newFile.category,
-          tags,
+          file_name: fileName,
+          category: 'General', // Default category
+          tags: [],
           file_type: fileType,
           file_size: fileSize,
           uploaded_by: user.name,
@@ -169,21 +167,20 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
 
     const record: FileRecord = {
       id,
-      fileName: newFile.fileName,
-      category: newFile.category,
+      fileName,
       lastModified: new Date(),
-      tags,
       fileType,
       fileSize,
-      uploadedBy: user.name
+      uploadedBy: user.name,
+      notes: newFile.notes || undefined
     };
 
     setFiles(prev => [record, ...prev]);
-    setNewFile({ fileName: '', category: '', tags: '', file: null });
+    setNewFile({ file: null, notes: '' });
     setIsUploadDialogOpen(false);
 
     if (onAddActivity) {
-      onAddActivity('File Upload', 'Knowledge Hub', `Uploaded ${record.fileName}`);
+      onAddActivity('File Upload', 'Knowledge Hub', `Uploaded ${fileName}`);
     }
     setSyncStatus({ level: 'synced', message: 'File saved' });
   };
@@ -225,9 +222,8 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
 
   const filteredFiles = files.filter(file => {
     const matchesSearch = file.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         file.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = categoryFilter === 'all' || file.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+                         (file.notes && file.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
   });
 
   return (
@@ -256,54 +252,38 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
               <DialogHeader>
                 <DialogTitle>Upload New File</DialogTitle>
                 <DialogDescription>
-                  Add a new file to the knowledge hub with categories and tags.
+                  Select a file to upload. The file name will be used automatically.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="fileName">File Name</Label>
-                  <Input
-                    id="fileName"
-                    value={newFile.fileName}
-                    onChange={(e) => setNewFile(prev => ({ ...prev, fileName: e.target.value }))}
-                    placeholder="Enter descriptive file name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select onValueChange={(value) => setNewFile(prev => ({ ...prev, category: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="tags">Tags (comma-separated)</Label>
-                  <Input
-                    id="tags"
-                    value={newFile.tags}
-                    onChange={(e) => setNewFile(prev => ({ ...prev, tags: e.target.value }))}
-                    placeholder="e.g., branding, guidelines, logo"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="file">File</Label>
+                  <Label htmlFor="file">File *</Label>
                   <Input
                     id="file"
                     type="file"
                     onChange={(e) => setNewFile(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
+                  />
+                  {newFile.file && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Selected: {newFile.file.name}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={newFile.notes}
+                    onChange={(e) => setNewFile(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Add any notes about this file..."
+                    rows={3}
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleFileUpload} disabled={!newFile.fileName || !newFile.category || !newFile.file}>
+                  <Button onClick={handleFileUpload} disabled={!newFile.file}>
                     Upload File
                   </Button>
                 </div>
@@ -454,25 +434,11 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
-                placeholder="Search files by name or tags..."
+                placeholder="Search files by name or notes..."
                 className="pl-12"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </CardContent>
@@ -491,10 +457,10 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
             <TableHeader>
               <TableRow>
                 <TableHead>File Name</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead>Notes</TableHead>
                 <TableHead>Last Modified</TableHead>
-                <TableHead>Tags</TableHead>
                 <TableHead>Size</TableHead>
+                <TableHead>Uploaded By</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -513,7 +479,15 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{file.category}</Badge>
+                      <div className="max-w-xs">
+                        {file.notes ? (
+                          <div className="text-sm text-gray-700 truncate" title={file.notes}>
+                            {file.notes}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">No notes</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center text-sm text-gray-500">
@@ -521,18 +495,11 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                         {file.lastModified.toLocaleDateString()}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {file.tags.map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            <Tag className="w-3 h-3 mr-1" />
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
                     <TableCell className="text-sm text-gray-500">
                       {file.fileSize}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {file.uploadedBy}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -565,8 +532,8 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
               <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg text-gray-900 mb-2">No Files Found</h3>
               <p className="text-gray-600 mb-6">
-                {searchTerm || categoryFilter !== 'all' 
-                  ? "Try adjusting your search criteria or filters." 
+                {searchTerm 
+                  ? "Try adjusting your search criteria." 
                   : "Upload your first file to get started."}
               </p>
               {canUploadKnowledge && (
