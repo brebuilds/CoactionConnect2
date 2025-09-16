@@ -52,8 +52,8 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [files, setFiles] = useState<FileRecord[]>([]);
-  const [newFile, setNewFile] = useState({
-    file: null as File | null,
+  const [newFiles, setNewFiles] = useState({
+    files: [] as File[],
     notes: ''
   });
 
@@ -141,48 +141,62 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
   };
 
   const handleFileUpload = async () => {
-    if (!newFile.file) return;
+    if (newFiles.files.length === 0) return;
     
-    const fileName = newFile.file.name;
-    const fileType = newFile.file.name.split('.').pop()?.toUpperCase() || 'FILE';
-    const fileSize = formatFileSize(newFile.file.size);
+    const uploadedFiles: FileRecord[] = [];
+    let successCount = 0;
+    let errorCount = 0;
 
-    let id = Date.now().toString();
-    try {
-      if (currentProject) {
-        id = await KnowledgeService.uploadFile(newFile.file, currentProject.id, {
-          file_name: fileName,
-          category: 'General', // Default category
-          tags: [],
-          file_type: fileType,
-          file_size: fileSize,
-          uploaded_by: user.name,
-          project_id: currentProject.id
-        } as any);
+    for (const file of newFiles.files) {
+      const fileName = file.name;
+      const fileType = file.name.split('.').pop()?.toUpperCase() || 'FILE';
+      const fileSize = formatFileSize(file.size);
+
+      let id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      try {
+        if (currentProject) {
+          id = await KnowledgeService.uploadFile(file, currentProject.id, {
+            file_name: fileName,
+            category: 'General', // Default category
+            tags: [],
+            file_type: fileType,
+            file_size: fileSize,
+            uploaded_by: user.name,
+            project_id: currentProject.id
+          } as any);
+        }
+        successCount++;
+      } catch (e) {
+        console.warn('Knowledge upload failed for', fileName, e);
+        errorCount++;
       }
-    } catch (e) {
-      console.warn('Knowledge upload failed, saving locally only:', e);
-      setSyncStatus({ level: 'local-only', message: 'File saved locally' });
+
+      const record: FileRecord = {
+        id,
+        fileName,
+        lastModified: new Date(),
+        fileType,
+        fileSize,
+        uploadedBy: user.name,
+        notes: newFiles.notes || undefined
+      };
+
+      uploadedFiles.push(record);
     }
 
-    const record: FileRecord = {
-      id,
-      fileName,
-      lastModified: new Date(),
-      fileType,
-      fileSize,
-      uploadedBy: user.name,
-      notes: newFile.notes || undefined
-    };
-
-    setFiles(prev => [record, ...prev]);
-    setNewFile({ file: null, notes: '' });
+    setFiles(prev => [...uploadedFiles, ...prev]);
+    setNewFiles({ files: [], notes: '' });
     setIsUploadDialogOpen(false);
 
     if (onAddActivity) {
-      onAddActivity('File Upload', 'Knowledge Hub', `Uploaded ${fileName}`);
+      onAddActivity('File Upload', 'Knowledge Hub', `Uploaded ${successCount} file${successCount !== 1 ? 's' : ''}`);
     }
-    setSyncStatus({ level: 'synced', message: 'File saved' });
+
+    if (errorCount > 0) {
+      setSyncStatus({ level: 'error', message: `${successCount} files saved, ${errorCount} failed` });
+    } else {
+      setSyncStatus({ level: 'synced', message: `${successCount} file${successCount !== 1 ? 's' : ''} saved` });
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -245,37 +259,62 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
               <DialogTrigger asChild>
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload File
+                  Upload Files
                 </Button>
               </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
               <DialogHeader>
-                <DialogTitle>Upload New File</DialogTitle>
+                <DialogTitle>Upload Files</DialogTitle>
                 <DialogDescription>
-                  Select a file to upload. The file name will be used automatically.
+                  Select one or more files to upload. File names will be used automatically.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="file">File *</Label>
+                  <Label htmlFor="files">Files *</Label>
                   <Input
-                    id="file"
+                    id="files"
                     type="file"
-                    onChange={(e) => setNewFile(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
+                    multiple
+                    onChange={(e) => {
+                      const selectedFiles = Array.from(e.target.files || []);
+                      setNewFiles(prev => ({ ...prev, files: selectedFiles }));
+                    }}
                   />
-                  {newFile.file && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Selected: {newFile.file.name}
-                    </p>
+                  {newFiles.files.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm text-gray-600">
+                        Selected {newFiles.files.length} file{newFiles.files.length !== 1 ? 's' : ''}:
+                      </p>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {newFiles.files.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
+                            <span className="truncate flex-1">{file.name}</span>
+                            <span className="text-gray-500 ml-2">({formatFileSize(file.size)})</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="ml-2 h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                              onClick={() => {
+                                const updatedFiles = newFiles.files.filter((_, i) => i !== index);
+                                setNewFiles(prev => ({ ...prev, files: updatedFiles }));
+                              }}
+                            >
+                              ×
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
                 <div>
                   <Label htmlFor="notes">Notes (optional)</Label>
                   <Textarea
                     id="notes"
-                    value={newFile.notes}
-                    onChange={(e) => setNewFile(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Add any notes about this file..."
+                    value={newFiles.notes}
+                    onChange={(e) => setNewFiles(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Add any notes about these files..."
                     rows={3}
                   />
                 </div>
@@ -283,8 +322,8 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                   <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleFileUpload} disabled={!newFile.file}>
-                    Upload File
+                  <Button onClick={handleFileUpload} disabled={newFiles.files.length === 0}>
+                    Upload {newFiles.files.length} File{newFiles.files.length !== 1 ? 's' : ''}
                   </Button>
                 </div>
               </div>
@@ -534,12 +573,12 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
               <p className="text-gray-600 mb-6">
                 {searchTerm 
                   ? "Try adjusting your search criteria." 
-                  : "Upload your first file to get started."}
+                  : "Upload your first files to get started."}
               </p>
               {canUploadKnowledge && (
                 <Button onClick={() => setIsUploadDialogOpen(true)}>
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload First File
+                  Upload Files
                 </Button>
               )}
             </div>
