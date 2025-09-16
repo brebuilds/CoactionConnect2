@@ -108,8 +108,7 @@ export function Community({ user, currentProject }: CommunityProps) {
           }
         ];
       case 'tgmc':
-        // Show coming soon dialog for TGMC
-        setShowComingSoon(true);
+        // TGMC handled separately in component
         return [];
       default:
         return [];
