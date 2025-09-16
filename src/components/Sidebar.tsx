@@ -48,19 +48,19 @@ const getNavigationItems = (userRole: string, project?: Project) => {
       id: "social" as CurrentPage,
       label: "Social Media",
       icon: Share2,
-      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
+      disabled: project?.id === 'coaction',
     },
     {
       id: "website" as CurrentPage,
       label: "Website",
       icon: Globe,
-      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
+      disabled: project?.id === 'coaction',
     },
     {
       id: "insights" as CurrentPage,
       label: "Insights",
       icon: TrendingUp,
-      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
+      disabled: project?.id === 'coaction',
     },
     {
       id: "knowledge" as CurrentPage,
@@ -72,7 +72,7 @@ const getNavigationItems = (userRole: string, project?: Project) => {
       id: "community" as CurrentPage,
       label: "Community",
       icon: Users,
-      disabled: userRole === "CoactionViewer" || project?.id === 'coaction',
+      disabled: project?.id === 'coaction',
     },
     {
       id: "contact" as CurrentPage,

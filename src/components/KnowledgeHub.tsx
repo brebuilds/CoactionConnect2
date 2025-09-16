@@ -30,6 +30,9 @@ import { setSyncStatus } from '../utils/sync';
 interface KnowledgeHubProps {
   user: User;
   currentProject?: Project;
+  canEdit?: boolean;
+  canUploadKnowledge?: boolean;
+  canComment?: boolean;
   onAddActivity?: (action: string, section: string, details?: string) => void;
 }
 
@@ -44,7 +47,7 @@ interface FileRecord {
   uploadedBy: string;
 }
 
-export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeHubProps) {
+export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKnowledge = true, canComment = true, onAddActivity }: KnowledgeHubProps) {
   const isAdmin = user.role === 'SuperAdmin';
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -240,7 +243,7 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
             }
           </p>
         </div>
-        {isAdmin && (
+        {canUploadKnowledge && (
           <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -405,7 +408,7 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
                         >
                           <Download className="w-4 h-4" />
                         </Button>
-                        {isAdmin && (
+                        {canEdit && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -431,7 +434,7 @@ export function KnowledgeHub({ user, currentProject, onAddActivity }: KnowledgeH
                   ? "Try adjusting your search criteria or filters." 
                   : "Upload your first file to get started."}
               </p>
-              {isAdmin && (
+              {canUploadKnowledge && (
                 <Button onClick={() => setIsUploadDialogOpen(true)}>
                   <Upload className="w-4 h-4 mr-2" />
                   Upload First File

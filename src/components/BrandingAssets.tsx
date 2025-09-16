@@ -591,7 +591,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleUpdateColor = (index: number, field: string, value: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     const updatedColors = [...colorPalette];
     updatedColors[index] = { ...updatedColors[index], [field]: value };
     setColorPalette(updatedColors);
@@ -601,7 +601,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleDeleteColor = async (index: number) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     const toDelete = colorPalette[index];
     setColorPalette(colorPalette.filter((_, i) => i !== index));
     if (currentProject) {
@@ -618,7 +618,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleDeleteLogo = async (index: number) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     const toDelete = logos[index];
     const next = logos.filter((_, i) => i !== index);
     setLogos(next);
@@ -635,7 +635,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleDeleteFont = async (index: number) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     const toDelete = fonts[index];
     const next = fonts.filter((_, i) => i !== index);
     setFonts(next);
@@ -652,7 +652,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleUpdateLogo = (index: number, field: string, value: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     const updatedLogos = [...logos];
     updatedLogos[index] = { ...updatedLogos[index], [field]: value };
     setLogos(updatedLogos);
@@ -993,7 +993,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
 
         <TabsContent value="colors" className="space-y-6">
           <div className="flex justify-end mb-4">
-            {isAdmin && (
+            {canEdit && (
               <Dialog open={isAddColorDialogOpen} onOpenChange={setIsAddColorDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
@@ -1161,7 +1161,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
 
         <TabsContent value="fonts" className="space-y-6">
           <div className="flex justify-end mb-4">
-            {isAdmin && (
+            {canEdit && (
               <Dialog open={isAddFontDialogOpen} onOpenChange={setIsAddFontDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
