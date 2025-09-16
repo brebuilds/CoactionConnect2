@@ -18,7 +18,7 @@ import {
   Users,
   TrendingUp,
   Settings,
-  User,
+  User as UserIcon,
   Key,
   ChevronDown,
 } from "lucide-react";
@@ -305,7 +305,7 @@ export function Sidebar({
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center">
-                <User className="w-5 h-5 mr-2" />
+                <UserIcon className="w-5 h-5 mr-2" />
                 Edit Profile
               </DialogTitle>
               <DialogDescription>
