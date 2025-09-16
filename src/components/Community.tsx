@@ -242,9 +242,23 @@ export function Community({ user, currentProject }: CommunityProps) {
             <div className="text-center mb-8">
               <Users className="w-16 h-16 text-primary/60 mx-auto mb-4" />
               <h3 className="text-2xl text-foreground mb-2">Knowledge Hub - What to Upload</h3>
-              <p className="text-foreground/70 text-lg">
-                Help us tell your hospital's story by sharing these materials with us:
+              <p className="text-foreground/70 text-lg mb-6">
+                Help us tell your story! Here's a list of ideas you can upload and share that are great for content creation. Photos are also welcome!
               </p>
+              
+              {/* Top Upload Button */}
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xl px-12 py-6 h-auto font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                onClick={() => {
+                  // Navigate to Knowledge Hub
+                  const event = new CustomEvent('navigate', { detail: 'knowledge' });
+                  window.dispatchEvent(event);
+                }}
+              >
+                <Upload className="w-7 h-7 mr-4" />
+                Upload to Knowledge Hub
+              </Button>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -313,23 +327,24 @@ export function Community({ user, currentProject }: CommunityProps) {
               </div>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
-              <p className="text-foreground/80 mb-6 leading-relaxed">
+            <div className="text-center p-8 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+              <p className="text-foreground/80 mb-8 leading-relaxed text-lg">
                 The more information you share about your vision for healthcare in McAllen, 
                 the better we can create content that builds community trust and excitement 
                 for your hospital's opening.
               </p>
               
+              {/* Bottom Upload Button - Extra Large */}
               <Button 
                 size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-4 h-auto"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-2xl px-16 py-8 h-auto font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
                 onClick={() => {
                   // Navigate to Knowledge Hub
                   const event = new CustomEvent('navigate', { detail: 'knowledge' });
                   window.dispatchEvent(event);
                 }}
               >
-                <Upload className="w-6 h-6 mr-3" />
+                <Upload className="w-8 h-8 mr-4" />
                 Upload to Knowledge Hub
               </Button>
             </div>
