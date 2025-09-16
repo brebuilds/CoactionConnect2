@@ -64,6 +64,8 @@ export default function App() {
   const [currentProjectId, setCurrentProjectId] = useState<ProjectId>('coaction');
   const [loading, setLoading] = useState(true);
   const [pendingPostsCount, setPendingPostsCount] = useState(0);
+  const [showLogoutWarning, setShowLogoutWarning] = useState(false);
+  const [logoutCountdown, setLogoutCountdown] = useState(0);
   const syncStatus = useSyncStatus();
 
   // Get current project and convert to client settings
@@ -82,6 +84,69 @@ export default function App() {
   useEffect(() => {
     applyThemeColors(currentProject.colors);
   }, [currentProjectId, currentProject.colors]);
+
+  // Auto-logout after inactivity
+  useEffect(() => {
+    if (!user) return; // Only set up auto-logout if user is logged in
+
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const WARNING_TIME = 2 * 60 * 1000; // Show warning 2 minutes before logout
+    let inactivityTimer: NodeJS.Timeout;
+    let warningTimer: NodeJS.Timeout;
+    let countdownInterval: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer);
+      clearTimeout(warningTimer);
+      clearInterval(countdownInterval);
+      setShowLogoutWarning(false);
+      setLogoutCountdown(0);
+
+      // Set warning timer (28 minutes)
+      warningTimer = setTimeout(() => {
+        setShowLogoutWarning(true);
+        setLogoutCountdown(120); // 2 minutes countdown
+        
+        // Start countdown
+        countdownInterval = setInterval(() => {
+          setLogoutCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              handleLogout();
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, INACTIVITY_TIMEOUT - WARNING_TIME);
+
+      // Set final logout timer (30 minutes)
+      inactivityTimer = setTimeout(() => {
+        handleLogout();
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    // Events that indicate user activity
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    // Add event listeners
+    activityEvents.forEach(event => {
+      document.addEventListener(event, resetTimer, true);
+    });
+
+    // Start the timer
+    resetTimer();
+
+    // Cleanup function
+    return () => {
+      clearTimeout(inactivityTimer);
+      clearTimeout(warningTimer);
+      clearInterval(countdownInterval);
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, resetTimer, true);
+      });
+    };
+  }, [user]);
 
   const checkExistingSession = () => {
     try {
@@ -399,6 +464,46 @@ export default function App() {
           {renderCurrentPage()}
         </div>
       </div>
+
+      {/* Auto-logout Warning Dialog */}
+      {showLogoutWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border border-accent/20 rounded-lg p-6 max-w-md mx-4 shadow-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-orange-500" />
+              <h3 className="text-lg font-semibold text-foreground">Session Timeout Warning</h3>
+            </div>
+            <p className="text-foreground/70 mb-4">
+              You have been inactive for 28 minutes. Your session will expire in:
+            </p>
+            <div className="text-center mb-6">
+              <div className="text-3xl font-bold text-orange-500">
+                {Math.floor(logoutCountdown / 60)}:{(logoutCountdown % 60).toString().padStart(2, '0')}
+              </div>
+              <p className="text-sm text-foreground/60 mt-1">minutes:seconds</p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowLogoutWarning(false);
+                  setLogoutCountdown(0);
+                  // Reset the timer by triggering a fake activity event
+                  document.dispatchEvent(new Event('mousedown'));
+                }}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md font-medium transition-colors"
+              >
+                Stay Logged In
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium transition-colors"
+              >
+                Logout Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
