@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { User } from '../App';
 import { Project } from './ProjectManager';
-import { AssetService, ColorService, FontService } from '../supabase/services';
+import { AssetService, ColorService, FontService } from '../airtable/services';
 import { setSyncStatus } from '../utils/sync';
 
 interface BrandingAssetsProps {

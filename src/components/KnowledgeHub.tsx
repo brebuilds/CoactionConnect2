@@ -24,7 +24,7 @@ import {
   Trash2,
   Edit
 } from 'lucide-react';
-import { KnowledgeService } from '../supabase/services';
+import { KnowledgeService } from '../airtable/services';
 import { setSyncStatus } from '../utils/sync';
 
 interface KnowledgeHubProps {
