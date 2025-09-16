@@ -82,13 +82,21 @@ const getNavigationItems = (userRole: string, project?: Project) => {
     },
   ];
 
-  // Add settings for Admin and SuperAdmin users
-  if (userRole === "Admin" || userRole === "SuperAdmin") {
+  // Add settings for SuperAdmin users only (Bre)
+  if (userRole === "SuperAdmin") {
     baseItems.push({
       id: "settings" as CurrentPage,
-      label: "Settings",
+      label: "Settings/API",
       icon: Settings,
       disabled: false,
+    });
+  } else {
+    // Add disabled settings for all other users
+    baseItems.push({
+      id: "settings" as CurrentPage,
+      label: "Settings/API",
+      icon: Settings,
+      disabled: true,
     });
   }
 
