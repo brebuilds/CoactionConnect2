@@ -36,9 +36,10 @@ export const ProjectService = {
     
     return result.records.map((record: any) => ({
       id: record.id,
-      name: record.fields.Name,
+      name: record.fields['Project Name'],
       description: record.fields.Description,
-      status: record.fields.Status,
+      primaryColor: record.fields['Primary Color'],
+      mainLogo: record.fields['Main Logo'],
       created_at: record.fields['Created Date']
     }));
   },
@@ -48,15 +49,16 @@ export const ProjectService = {
     const result = await airtableRequest(TABLE_NAMES.projects, 'GET');
     
     const project = result.records.find((record: any) => 
-      record.fields['Project ID'] === projectId
+      record.fields['Project Name'] === projectId
     );
     
     if (project) {
       return {
         id: project.id,
-        name: project.fields.Name,
+        name: project.fields['Project Name'],
         description: project.fields.Description,
-        status: project.fields.Status,
+        primaryColor: project.fields['Primary Color'],
+        mainLogo: project.fields['Main Logo'],
         created_at: project.fields['Created Date']
       };
     }
@@ -81,13 +83,13 @@ export const AssetService = {
     
     const record = {
       fields: {
-        'Name': asset.name,
+        'Logo Name': asset.name,
         'Type': asset.type || assetType,
         'Format': asset.format,
         'Size': asset.size,
         'File': asset.url ? [{ url: asset.url }] : undefined,
         'Project': [projectId], // Link to Projects table
-        'Uploaded By': asset.uploadedBy,
+        'Uploaded by': asset.uploadedBy,
         'Upload Date': new Date().toISOString()
       }
     };
@@ -111,13 +113,13 @@ export const AssetService = {
       })
       .map((record: any) => ({
         id: record.id,
-        name: record.fields.Name,
+        name: record.fields['Logo Name'],
         type: record.fields.Type,
         format: record.fields.Format,
         size: record.fields.Size,
         url: record.fields.File?.[0]?.url,
         project_id: projectId,
-        uploaded_by: record.fields['Uploaded By'],
+        uploaded_by: record.fields['Uploaded by'],
         created_at: record.fields['Upload Date']
       }));
   },
@@ -148,7 +150,7 @@ export const ColorService = {
   saveColor: async (color: any, projectId: string): Promise<string> => {
     const record = {
       fields: {
-        'Name': color.name,
+        'Color Name': color.name,
         'Hex Code': color.hex,
         'Usage': color.usage,
         'Pantone': color.pantone || '',
@@ -171,7 +173,7 @@ export const ColorService = {
       })
       .map((record: any) => ({
         id: record.id,
-        name: record.fields.Name,
+        name: record.fields['Color Name'],
         hex: record.fields['Hex Code'],
         usage: record.fields.Usage,
         pantone: record.fields.Pantone
@@ -184,7 +186,7 @@ export const FontService = {
   saveFont: async (font: any, projectId: string): Promise<string> => {
     const record = {
       fields: {
-        'Name': font.name,
+        'Font Name': font.name,
         'Weight': font.weight,
         'Usage': font.usage,
         'Family': font.family,
@@ -208,7 +210,7 @@ export const FontService = {
       })
       .map((record: any) => ({
         id: record.id,
-        name: record.fields.Name,
+        name: record.fields['Font Name'],
         weight: record.fields.Weight,
         usage: record.fields.Usage,
         family: record.fields.Family,
@@ -235,7 +237,7 @@ export const KnowledgeService = {
         'File Size': metadata.file_size,
         'File': [{ url: fileUrl }],
         'Project': [projectId], // Link to Projects table
-        'Uploaded By': metadata.uploaded_by,
+        'Uploaded by': metadata.uploaded_by,
         'Upload Date': new Date().toISOString()
       }
     };
@@ -260,7 +262,7 @@ export const KnowledgeService = {
         file_type: record.fields['File Type'],
         file_size: record.fields['File Size'],
         url: record.fields.File?.[0]?.url,
-        uploaded_by: record.fields['Uploaded By'],
+        uploaded_by: record.fields['Uploaded by'],
         created_at: record.fields['Upload Date']
       }));
   },
@@ -283,7 +285,7 @@ export const SocialService = {
         'Created By': post.createdBy,
         'Approved By': post.approvedBy,
         'Project': [projectId], // Link to Projects table
-        'Created Date': new Date().toISOString()
+        'Created': new Date().toISOString()
       }
     };
 
@@ -310,7 +312,7 @@ export const SocialService = {
         publish_date: record.fields['Publish Date'],
         created_by: record.fields['Created By'],
         approved_by: record.fields['Approved By'],
-        created_at: record.fields['Created Date']
+        created_at: record.fields.Created
       }));
   },
 

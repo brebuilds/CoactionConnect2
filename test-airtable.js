@@ -39,6 +39,12 @@ async function testAirtableConnection() {
       expectedTables.forEach(table => {
         if (availableTables.includes(table)) {
           console.log(`  ✅ ${table} - Found`);
+          
+          // Show field names for each table
+          const tableData = data.tables[table];
+          if (tableData && tableData.fields) {
+            console.log(`     Fields: ${tableData.fields.map(f => f.name).join(', ')}`);
+          }
         } else {
           console.log(`  ❌ ${table} - Missing`);
         }
