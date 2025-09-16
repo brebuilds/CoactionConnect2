@@ -1,14 +1,14 @@
 // Test Airtable Connection
 // Run this in browser console to test your Airtable setup
 
-// Get credentials from environment or config
-const AIRTABLE_API_KEY = process.env.REACT_APP_AIRTABLE_API_KEY || '';
-const AIRTABLE_BASE_ID = process.env.REACT_APP_AIRTABLE_BASE_ID || '';
+// Get credentials from environment
+const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
 
 if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
   console.log('❌ Please set your Airtable credentials in .env file');
-  console.log('REACT_APP_AIRTABLE_API_KEY=your-api-key');
-  console.log('REACT_APP_AIRTABLE_BASE_ID=your-base-id');
+  console.log('VITE_AIRTABLE_API_KEY=your-api-key');
+  console.log('VITE_AIRTABLE_BASE_ID=your-base-id');
   return;
 }
 

@@ -51,7 +51,7 @@
 
 - [ ] **Knowledge Files Table**
   - [ ] File Name (Single line text)
-  - [ ] Category (Single select: Policies, Procedures, Training, Resources)
+  - [ ] Category (Single select: Research, Other)
   - [ ] Uploaded by (Single line text)
   - [ ] Upload Date (Date)
   - [ ] Tags (Long text)
