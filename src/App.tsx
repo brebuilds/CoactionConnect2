@@ -377,6 +377,25 @@ export default function App() {
         
         {/* Main Content */}
         <div className="p-8">
+          {/* Back Button - only show when not on dashboard */}
+          {currentPage !== 'dashboard' && (
+            <div className="mb-6">
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className="flex items-center text-foreground/70 hover:text-foreground transition-colors duration-200 group"
+              >
+                <svg 
+                  className="w-4 h-4 mr-2 transform group-hover:-translate-x-1 transition-transform duration-200" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Dashboard
+              </button>
+            </div>
+          )}
           {renderCurrentPage()}
         </div>
       </div>
