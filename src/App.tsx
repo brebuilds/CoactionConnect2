@@ -91,7 +91,7 @@ export default function App() {
       if (savedUser) {
         const user = JSON.parse(savedUser);
         // Update the name to just "Bre" if it's the Super Admin with old name
-        if (user.role === 'SuperAdmin' && user.name === 'Bre Williams') {
+        if (user.role === 'SuperAdmin' && (user.name === 'Bre Williams' || user.name === 'Coaction Admin')) {
           user.name = 'Bre';
           localStorage.setItem('coaction-auth-user', JSON.stringify(user));
         }
