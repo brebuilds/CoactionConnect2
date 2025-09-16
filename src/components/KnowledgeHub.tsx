@@ -243,14 +243,15 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
             }
           </p>
         </div>
-        {canUploadKnowledge && (
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload File
-              </Button>
-            </DialogTrigger>
+        <div className="flex gap-2">
+          {canUploadKnowledge && (
+            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload File
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Upload New File</DialogTitle>
@@ -309,7 +310,30 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
               </div>
             </DialogContent>
           </Dialog>
-        )}
+          )}
+          
+          {/* Clear All Files Button - Only for SuperAdmin */}
+          {user.role === 'SuperAdmin' && files.length > 0 && (
+            <Button 
+              variant="outline" 
+              className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+              onClick={() => {
+                if (confirm(`Are you sure you want to delete all ${files.length} files from the knowledge hub? This action cannot be undone.`)) {
+                  setFiles([]);
+                  if (currentProject) {
+                    localStorage.removeItem(`knowledge-files-${currentProject.id}`);
+                  }
+                  if (onAddActivity) {
+                    onAddActivity('Clear All Files', 'Knowledge Hub', `Cleared ${files.length} files`);
+                  }
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All ({files.length})
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Upload Guide for TGMC */}
