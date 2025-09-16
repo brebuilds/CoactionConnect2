@@ -190,7 +190,7 @@ export function Sidebar({
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-granite font-medium truncate">
-                Coaction Admin
+                {user.name}
               </p>
               <div className="flex items-center gap-1">
                 <p className="text-xs text-granite/60">
