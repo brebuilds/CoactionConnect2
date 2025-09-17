@@ -1,32 +1,6 @@
 # Coaction Connect
 
-A white-label client portal application built with React and Tailwind CSS, designed as a collaborative workspace for brand management, strategic partnerships, and community engagement.
-
-## Features
-
-- **Two-level access system** with Admin and Advisor roles
-- **Customizable branding** (company name, logo, 5-color palette)
-- **Six main sections**:
-  - Branding Assets
-  - Social Media
-  - Website
-  - Knowledge Hub
-  - Contact
-  - Community
-- **Role-based visibility** (Advisors don't see admin statistics)
-- **Admin activity tracking** and bulletin system
-- **Contact forms** and messaging capabilities
-- **CSV content management** with approval workflows
-- **File management** capabilities
-
-## Pre-configured Settings
-
-The application comes pre-configured as "Coaction Connect" with:
-- **Admin credentials**: `admin` / `CoactionAdmin2024!`
-- **Team credentials**: `team` / `CoactionTeam2024!`
-- **Brand colors**: Stirling blue (#4A90A4) and accent orange (#E07A33)
-
-## Tech Stack
+A white-label client portal application built with React and Tailwind CSS, designed as a 
 
 - **React** with TypeScript
 - **Tailwind CSS v4** for styling

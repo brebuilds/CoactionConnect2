@@ -389,7 +389,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative">
       <Sidebar 
         currentPage={currentPage} 
         onPageChange={setCurrentPage}
@@ -401,7 +401,7 @@ export default function App() {
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuClose={() => setIsMobileMenuOpen(false)}
       />
-      <div className="flex-1 ml-0 md:ml-64">
+      <div className="flex-1 ml-0 md:ml-64 min-h-screen">
         {/* Mobile Menu Button */}
         <div className="md:hidden fixed top-4 left-4 z-50">
           <button
