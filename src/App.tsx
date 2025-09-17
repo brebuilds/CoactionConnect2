@@ -68,6 +68,7 @@ export default function App() {
   const [logoutCountdown, setLogoutCountdown] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const syncStatus = useSyncStatus();
 
   // Get current project and convert to client settings
@@ -86,6 +87,17 @@ export default function App() {
   useEffect(() => {
     applyThemeColors(currentProject.colors);
   }, [currentProjectId, currentProject.colors]);
+
+  // Check screen size for responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Auto-logout after inactivity
   useEffect(() => {
@@ -404,7 +416,12 @@ export default function App() {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
-      <div className={`min-h-screen transition-all duration-300 px-4 md:px-6 ${isSidebarCollapsed ? 'md:ml-24' : 'md:ml-80'} bg-gray-50`}>
+      <div 
+        className="min-h-screen transition-all duration-300 px-4 md:px-6 bg-gray-50"
+        style={{
+          marginLeft: isDesktop ? (isSidebarCollapsed ? '64px' : '256px') : '0px'
+        }}
+      >
         {/* Mobile Menu Button */}
         <div className="md:hidden fixed top-4 left-4 z-50">
           <button
