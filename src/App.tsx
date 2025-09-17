@@ -404,7 +404,7 @@ export default function App() {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
-      <div className={`min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-24' : 'md:ml-80'} px-4 md:px-6`}>
+      <div className={`min-h-screen transition-all duration-300 px-4 md:px-6 ${isSidebarCollapsed ? 'md:ml-24' : 'md:ml-80'} bg-gray-50`}>
         {/* Mobile Menu Button */}
         <div className="md:hidden fixed top-4 left-4 z-50">
           <button
