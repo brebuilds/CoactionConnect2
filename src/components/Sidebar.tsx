@@ -193,7 +193,7 @@ export function Sidebar({
   };
 
   return (
-    <div className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-sedona/30 flex flex-col shadow-sm z-20 md:translate-x-0 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <div className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-sedona/30 flex flex-col shadow-sm z-20 transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : ''}`}>
       {/* Header */}
       <div className="p-6 border-b border-sedona/30">
         <div className="flex items-center space-x-3">
