@@ -549,7 +549,7 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                         >
                           <Download className="w-4 h-4" />
                         </Button>
-                        {canEdit && (
+                        {canUploadKnowledge && (
                           <Button
                             size="sm"
                             variant="outline"
