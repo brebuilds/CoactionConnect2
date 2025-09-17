@@ -67,6 +67,7 @@ export default function App() {
   const [showLogoutWarning, setShowLogoutWarning] = useState(false);
   const [logoutCountdown, setLogoutCountdown] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const syncStatus = useSyncStatus();
 
   // Get current project and convert to client settings
@@ -400,8 +401,10 @@ export default function App() {
         currentProject={currentProject}
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuClose={() => setIsMobileMenuOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
-      <div className="min-h-screen md:ml-64">
+      <div className={`min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Mobile Menu Button */}
         <div className="md:hidden fixed top-4 left-4 z-50">
           <button

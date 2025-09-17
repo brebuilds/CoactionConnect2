@@ -21,6 +21,8 @@ import {
   User as UserIcon,
   Key,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { CurrentPage, User } from "../App";
 import { ClientSettings } from "./ClientSetup";
@@ -36,6 +38,8 @@ interface SidebarProps {
   currentProject?: Project;
   isMobileMenuOpen?: boolean;
   onMobileMenuClose?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const getNavigationItems = (userRole: string, project?: Project) => {
@@ -121,6 +125,8 @@ export function Sidebar({
   currentProject,
   isMobileMenuOpen = false,
   onMobileMenuClose,
+  isCollapsed = false,
+  onToggleCollapse,
 }: SidebarProps) {
   const navigationItems = getNavigationItems(user.role, currentProject);
 
@@ -193,31 +199,51 @@ export function Sidebar({
   };
 
   return (
-    <div className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-sedona/30 flex flex-col shadow-sm z-20 transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : ''}`}>
+    <div className={`fixed left-0 top-0 h-full bg-white border-r border-sedona/30 flex flex-col shadow-sm z-20 transition-all duration-300 ease-in-out -translate-x-full md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : ''} ${isCollapsed ? 'w-16' : 'w-64'}`}>
       {/* Header */}
       <div className="p-6 border-b border-sedona/30">
-        <div className="flex items-center space-x-3">
-          {clientSettings?.logo ? (
-            <img
-              src={clientSettings.logo}
-              alt={clientSettings.companyName || "Company Logo"}
-              className="h-28 w-auto max-w-[150px] object-contain"
-            />
-          ) : (
-            <div className="h-8 w-32 bg-gray-200 rounded flex items-center justify-center">
-              <span className="text-xs text-gray-500">
-                No Logo
-              </span>
-            </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {clientSettings?.logo ? (
+              <img
+                src={clientSettings.logo}
+                alt={clientSettings.companyName || "Company Logo"}
+                className="h-28 w-auto max-w-[150px] object-contain"
+              />
+            ) : (
+              <div className="h-8 w-32 bg-gray-200 rounded flex items-center justify-center">
+                <span className="text-xs text-gray-500">
+                  No Logo
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {/* Collapse/Expand Button */}
+          {onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              className="hidden md:flex p-1 rounded hover:bg-gray-100 transition-colors"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              ) : (
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              )}
+            </button>
           )}
         </div>
-        <div className="mt-3">
-          <p className="text-xs text-granite/60 uppercase tracking-wider">
-            {clientSettings?.companyName
-              ? clientSettings.companyName
-              : "Client Dashboard"}
-          </p>
-        </div>
+        
+        {!isCollapsed && (
+          <div className="mt-3">
+            <p className="text-xs text-granite/60 uppercase tracking-wider">
+              {clientSettings?.companyName
+                ? clientSettings.companyName
+                : "Client Dashboard"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
@@ -240,10 +266,12 @@ export function Sidebar({
                 }`}
                 onClick={() => !item.disabled && handlePageChange(item.id)}
               >
-                <Icon className="w-5 h-5 mr-3" />
-                <span className="font-medium flex-1 text-left">
-                  {item.label}
-                </span>
+                <Icon className="w-5 h-5" />
+                {!isCollapsed && (
+                  <span className="font-medium flex-1 text-left ml-3">
+                    {item.label}
+                  </span>
+                )}
                 {/* Disabled indicator */}
                 {item.disabled && (
                   <span className="text-foreground/40 text-xs ml-2">✕</span>
