@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Shield, AlertCircle } from 'lucide-react';
+import { Shield, AlertCircle, Download, Smartphone } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 
 interface LoginPageProps {
@@ -17,6 +17,44 @@ export function LoginPage({ onLogin, companyName, companyLogo }: LoginPageProps)
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+
+  // PWA Install functionality
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallButton(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('PWA installed successfully');
+    } else {
+      console.log('PWA installation declined');
+    }
+    
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +150,23 @@ export function LoginPage({ onLogin, companyName, companyLogo }: LoginPageProps)
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
+
+            {/* PWA Install Button */}
+            {showInstallButton && (
+              <div className="mt-4">
+                <Button
+                  onClick={handleInstallClick}
+                  variant="outline"
+                  className="w-full h-12 border-primary text-primary hover:bg-primary hover:text-white font-medium"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Install App
+                </Button>
+                <p className="text-xs text-center text-foreground/60 mt-2">
+                  Install for offline access and better mobile experience
+                </p>
+              </div>
+            )}
 
             <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/10">
               <p className="text-sm text-primary">

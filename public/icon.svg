@@ -1,6 +1,20 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with rounded corners -->
   <rect width="512" height="512" rx="64" fill="#1c5f9a"/>
+  
+  <!-- Main content area -->
   <rect x="64" y="64" width="384" height="384" rx="32" fill="white"/>
-  <text x="256" y="300" font-family="Arial, sans-serif" font-size="120" font-weight="bold" text-anchor="middle" fill="#1c5f9a">C</text>
-  <text x="256" y="400" font-family="Arial, sans-serif" font-size="40" text-anchor="middle" fill="#1c5f9a">CoactionConnect</text>
+  
+  <!-- CoactionConnect "C" logo -->
+  <circle cx="256" cy="200" r="60" fill="none" stroke="#1c5f9a" stroke-width="12"/>
+  <path d="M 256 140 L 256 260" stroke="#1c5f9a" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- Connect dots -->
+  <circle cx="200" cy="300" r="8" fill="#1c5f9a"/>
+  <circle cx="240" cy="300" r="8" fill="#1c5f9a"/>
+  <circle cx="280" cy="300" r="8" fill="#1c5f9a"/>
+  <circle cx="320" cy="300" r="8" fill="#1c5f9a"/>
+  
+  <!-- App name -->
+  <text x="256" y="360" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#1c5f9a">CoactionConnect</text>
 </svg>
