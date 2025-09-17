@@ -20,7 +20,8 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
-  Pause
+  Pause,
+  ExternalLink
 } from "lucide-react";
 
 interface SocialMediaProps {
@@ -253,6 +254,65 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
           </Dialog>
         )}
       </div>
+
+      {/* Social Media Account Links */}
+      <Card className="border-accent/20">
+        <CardHeader>
+          <CardTitle className="text-foreground">Social Media Accounts</CardTitle>
+          <CardDescription>Quick access to your social media profiles</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center space-y-2 hover:bg-blue-50 hover:border-blue-200"
+              onClick={() => window.open('https://facebook.com', '_blank')}
+            >
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">f</span>
+              </div>
+              <span className="text-sm font-medium">Facebook</span>
+              <ExternalLink className="w-3 h-3 text-gray-400" />
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center space-y-2 hover:bg-pink-50 hover:border-pink-200"
+              onClick={() => window.open('https://instagram.com', '_blank')}
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">📷</span>
+              </div>
+              <span className="text-sm font-medium">Instagram</span>
+              <ExternalLink className="w-3 h-3 text-gray-400" />
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center space-y-2 hover:bg-blue-50 hover:border-blue-200"
+              onClick={() => window.open('https://linkedin.com', '_blank')}
+            >
+              <div className="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">in</span>
+              </div>
+              <span className="text-sm font-medium">LinkedIn</span>
+              <ExternalLink className="w-3 h-3 text-gray-400" />
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center space-y-2 hover:bg-green-50 hover:border-green-200"
+              onClick={() => window.open('https://business.google.com', '_blank')}
+            >
+              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">G</span>
+              </div>
+              <span className="text-sm font-medium">Google Business</span>
+              <ExternalLink className="w-3 h-3 text-gray-400" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Posts Table */}
       <Card>
