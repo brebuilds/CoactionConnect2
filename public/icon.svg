@@ -5,16 +5,34 @@
   <!-- Main content area -->
   <rect x="64" y="64" width="384" height="384" rx="32" fill="white"/>
   
-  <!-- CoactionConnect "C" logo -->
-  <circle cx="256" cy="200" r="60" fill="none" stroke="#1c5f9a" stroke-width="12"/>
-  <path d="M 256 140 L 256 260" stroke="#1c5f9a" stroke-width="12" stroke-linecap="round"/>
-  
-  <!-- Connect dots -->
-  <circle cx="200" cy="300" r="8" fill="#1c5f9a"/>
-  <circle cx="240" cy="300" r="8" fill="#1c5f9a"/>
-  <circle cx="280" cy="300" r="8" fill="#1c5f9a"/>
-  <circle cx="320" cy="300" r="8" fill="#1c5f9a"/>
-  
-  <!-- App name -->
-  <text x="256" y="360" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#1c5f9a">CoactionConnect</text>
+  <!-- Coaction Connect Logo -->
+  <g transform="translate(256, 256)">
+    <!-- Wi-Fi icon above -->
+    <g transform="translate(0, -80)">
+      <path d="M -12 -8 L 0 0 L 12 -8" stroke="#1c5f9a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M -8 -4 L 0 0 L 8 -4" stroke="#1c5f9a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="0" cy="0" r="2" fill="#1c5f9a"/>
+    </g>
+    
+    <!-- "coaction" text -->
+    <g transform="translate(-60, -20)">
+      <!-- "c" -->
+      <text x="0" y="0" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1c5f9a">c</text>
+      
+      <!-- Orange connecting symbol (top half) -->
+      <path d="M 12 0 Q 20 -8 28 0 Q 20 8 12 0" stroke="#FF6B35" stroke-width="4" fill="none" stroke-linecap="round"/>
+      
+      <!-- "action" -->
+      <text x="32" y="0" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1c5f9a">action</text>
+    </g>
+    
+    <!-- "connect" text -->
+    <g transform="translate(-60, 20)">
+      <!-- Orange connecting symbol (bottom half) -->
+      <path d="M 12 0 Q 20 8 28 0 Q 20 -8 12 0" stroke="#FF6B35" stroke-width="4" fill="none" stroke-linecap="round"/>
+      
+      <!-- "onnect" -->
+      <text x="32" y="0" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1c5f9a">onnect</text>
+    </g>
+  </g>
 </svg>
