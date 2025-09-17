@@ -34,6 +34,8 @@ interface SidebarProps {
   clientSettings?: ClientSettings;
   pendingPostsCount?: number;
   currentProject?: Project;
+  isMobileMenuOpen?: boolean;
+  onMobileMenuClose?: () => void;
 }
 
 const getNavigationItems = (userRole: string, project?: Project) => {
@@ -117,8 +119,17 @@ export function Sidebar({
   clientSettings,
   pendingPostsCount = 0,
   currentProject,
+  isMobileMenuOpen = false,
+  onMobileMenuClose,
 }: SidebarProps) {
   const navigationItems = getNavigationItems(user.role, currentProject);
+
+  const handlePageChange = (page: CurrentPage) => {
+    onPageChange(page);
+    if (onMobileMenuClose) {
+      onMobileMenuClose();
+    }
+  };
   
   // Profile dialog state
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
@@ -182,7 +193,7 @@ export function Sidebar({
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-sedona/30 flex flex-col shadow-sm">
+    <div className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-sedona/30 flex flex-col shadow-sm z-50 md:translate-x-0 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Header */}
       <div className="p-6 border-b border-sedona/30">
         <div className="flex items-center space-x-3">
@@ -227,7 +238,7 @@ export function Sidebar({
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                     : "text-granite hover:bg-secondary hover:text-primary"
                 }`}
-                onClick={() => !item.disabled && onPageChange(item.id)}
+                onClick={() => !item.disabled && handlePageChange(item.id)}
               >
                 <Icon className="w-5 h-5 mr-3" />
                 <span className="font-medium flex-1 text-left">
