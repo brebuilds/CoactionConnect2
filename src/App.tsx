@@ -401,7 +401,7 @@ export default function App() {
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuClose={() => setIsMobileMenuOpen(false)}
       />
-      <div className="absolute left-0 md:left-64 top-0 right-0 min-h-screen">
+      <div className="min-h-screen md:ml-64">
         {/* Mobile Menu Button */}
         <div className="md:hidden fixed top-4 left-4 z-50">
           <button
