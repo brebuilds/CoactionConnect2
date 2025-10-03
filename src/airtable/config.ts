@@ -14,10 +14,11 @@ export const AIRTABLE_BASE_URL = 'https://api.airtable.com/v0';
 export const TABLE_NAMES = {
   projects: 'Projects',
   logos: 'Logos',
-  colors: 'Colors', 
+  colors: 'Colors',
   fonts: 'Fonts',
   knowledgeFiles: 'Knowledge Files',
-  socialPosts: 'Social Posts'
+  socialPosts: 'Social Posts',
+  graphicTemplates: 'Graphic Templates'
 };
 
 // Project IDs that match your ProjectManager

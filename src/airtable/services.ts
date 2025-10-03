@@ -328,3 +328,71 @@ export const SocialService = {
     await airtableRequest(TABLE_NAMES.socialPosts, 'DELETE');
   }
 };
+
+// Graphic Templates Management
+export const GraphicTemplateService = {
+  // Save a new graphic template
+  saveTemplate: async (template: any, projectId: string): Promise<string> => {
+    const record = {
+      fields: {
+        'Template Name': template.name,
+        'Category': template.category,
+        'Image URL': template.imageUrl,
+        'Dimensions': template.dimensions || '',
+        'Tags': template.tags?.join(', ') || '',
+        'Project': [projectId], // Link to Projects table
+        'Uploaded By': template.uploadedBy,
+        'Upload Date': new Date().toISOString()
+      }
+    };
+
+    const result = await airtableRequest(TABLE_NAMES.graphicTemplates, 'POST', { records: [record] });
+    return result.records[0].id;
+  },
+
+  // Get all templates for a project
+  getTemplates: async (projectId: string, category?: string): Promise<any[]> => {
+    const result = await airtableRequest(TABLE_NAMES.graphicTemplates, 'GET');
+
+    return result.records
+      .filter((record: any) => {
+        const linkedProjects = record.fields.Project || [];
+        const matchesProject = linkedProjects.includes(projectId);
+        const matchesCategory = !category || category === 'All' || record.fields.Category === category;
+        return matchesProject && matchesCategory;
+      })
+      .map((record: any) => ({
+        id: record.id,
+        name: record.fields['Template Name'],
+        category: record.fields.Category,
+        imageUrl: record.fields['Image URL'],
+        dimensions: record.fields.Dimensions,
+        tags: record.fields.Tags ? record.fields.Tags.split(', ') : [],
+        uploadedBy: record.fields['Uploaded By'],
+        uploadedAt: new Date(record.fields['Upload Date'])
+      }));
+  },
+
+  // Update a template
+  updateTemplate: async (templateId: string, updates: any): Promise<void> => {
+    const record = {
+      records: [{
+        id: templateId,
+        fields: {
+          'Template Name': updates.name,
+          'Category': updates.category,
+          'Image URL': updates.imageUrl,
+          'Dimensions': updates.dimensions,
+          'Tags': updates.tags?.join(', ')
+        }
+      }]
+    };
+
+    await airtableRequest(TABLE_NAMES.graphicTemplates, 'PATCH', record);
+  },
+
+  // Delete a template
+  deleteTemplate: async (templateId: string): Promise<void> => {
+    await airtableRequest(`${TABLE_NAMES.graphicTemplates}/${templateId}`, 'DELETE');
+  }
+};
