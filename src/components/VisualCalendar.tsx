@@ -178,7 +178,15 @@ export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, c
       {/* Header Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold text-foreground">Content Calendar</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Content Calendar</h2>
+            <p className="text-sm text-muted-foreground">
+              {currentDate.toLocaleDateString('en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === 'week' ? 'default' : 'outline'}
@@ -355,25 +363,28 @@ export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, c
           {viewMode === 'week' ? (
             <div className="calendar-week-view">
               {/* Week Header */}
-              <div className="grid grid-cols-7 border-b border-gray-200">
+              <div className="grid grid-cols-7 border-b-2 border-gray-300 bg-gray-100">
                 {dates.map((date, index) => (
-                  <div key={index} className="p-4 text-center border-r border-gray-200 last:border-r-0">
-                    <div className="text-sm font-medium text-gray-600 mb-1">
+                  <div key={index} className="p-4 text-center border-r border-gray-300 last:border-r-0">
+                    <div className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-1">
                       {date.toLocaleDateString('en-US', { weekday: 'short' })}
                     </div>
                     <div className="text-lg font-bold text-gray-900">
                       {date.getDate()}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {date.toLocaleDateString('en-US', { month: 'short' })}
                     </div>
                   </div>
                 ))}
               </div>
               
               {/* Week Calendar Body */}
-              <div className="grid grid-cols-7 min-h-[400px]">
+              <div className="grid grid-cols-7 min-h-[500px] border-l border-t border-gray-300">
                 {dates.map((date, index) => (
                   <div 
                     key={index} 
-                    className="border-r border-gray-200 last:border-r-0 p-2 min-h-[400px] bg-white hover:bg-gray-50 transition-colors"
+                    className="border-r border-b border-gray-300 last:border-r-0 p-3 min-h-[500px] bg-white hover:bg-gray-50 transition-colors"
                   >
                     <div className="space-y-2">
                       {getPostsForDate(date).map((post) => (
@@ -430,27 +441,28 @@ export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, c
           ) : (
             <div className="calendar-month-view">
               {/* Month Header */}
-              <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+              <div className="grid grid-cols-7 border-b-2 border-gray-300 bg-gray-100">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <div key={day} className="p-4 text-center border-r border-gray-200 last:border-r-0">
-                    <div className="text-sm font-medium text-gray-600">{day}</div>
+                  <div key={day} className="p-3 text-center border-r border-gray-300 last:border-r-0">
+                    <div className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{day}</div>
                   </div>
                 ))}
               </div>
               
               {/* Month Calendar Body */}
-              <div className="grid grid-cols-7">
+              <div className="grid grid-cols-7 border-l border-t border-gray-300">
                 {dates.map((date, index) => (
                   <div
                     key={index}
-                    className={`min-h-[120px] p-2 border-r border-b border-gray-200 last:border-r-0 ${
+                    className={`min-h-[140px] p-3 border-r border-b border-gray-300 last:border-r-0 ${
                       date.getMonth() === currentDate.getMonth() 
                         ? 'bg-white hover:bg-gray-50' 
                         : 'bg-gray-50 text-gray-400'
-                    } transition-colors`}
+                    } transition-colors relative`}
                   >
+                    {/* Date Number */}
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`text-sm font-medium ${
+                      <div className={`text-lg font-semibold ${
                         date.getMonth() === currentDate.getMonth() 
                           ? 'text-gray-900' 
                           : 'text-gray-400'
@@ -460,25 +472,40 @@ export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, c
                       {date.getDate() === new Date().getDate() && 
                        date.getMonth() === new Date().getMonth() && 
                        date.getFullYear() === new Date().getFullYear() && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                       )}
                     </div>
                     
+                    {/* Posts */}
                     <div className="space-y-1">
-                      {getPostsForDate(date).slice(0, 3).map((post) => (
+                      {getPostsForDate(date).slice(0, 4).map((post) => (
                         <div
                           key={post.id}
-                          className={`p-1 rounded text-xs ${getStatusColor(post.status)} truncate cursor-pointer hover:shadow-sm transition-shadow`}
+                          className={`p-2 rounded-md text-xs ${getStatusColor(post.status)} cursor-pointer hover:shadow-md transition-all duration-200 border-l-2 ${
+                            post.status === 'published' ? 'border-l-green-400' :
+                            post.status === 'scheduled' ? 'border-l-blue-400' :
+                            post.status === 'draft' ? 'border-l-gray-400' :
+                            'border-l-red-400'
+                          }`}
                           title={`${post.title} - ${post.content.substring(0, 100)}`}
                           onClick={() => setSelectedPost(post)}
                         >
-                          <span className="mr-1">{getPlatformIcon(post.platform)}</span>
-                          {post.title}
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className="text-sm">{getPlatformIcon(post.platform)}</span>
+                            <span className="text-xs text-gray-600">
+                              {new Date(post.scheduledDate).toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
+                              })}
+                            </span>
+                          </div>
+                          <div className="font-medium truncate">{post.title}</div>
                         </div>
                       ))}
-                      {getPostsForDate(date).length > 3 && (
-                        <div className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
-                          +{getPostsForDate(date).length - 3} more
+                      {getPostsForDate(date).length > 4 && (
+                        <div className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 font-medium">
+                          +{getPostsForDate(date).length - 4} more posts
                         </div>
                       )}
                     </div>
