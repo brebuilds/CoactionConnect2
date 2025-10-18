@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../App';
 import { Project } from './ProjectManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -28,6 +28,33 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 interface InsightsProps {
   user: User;
+  currentProject?: Project;
+}
+
+interface SocialMediaAnalytics {
+  platform: string;
+  followers: number;
+  engagement: number;
+  reach: number;
+  posts: number;
+  growth30d: number;
+  topPost: {
+    content: string;
+    engagement: number;
+    date: string;
+  };
+}
+
+interface PostPerformance {
+  id: string;
+  platform: string;
+  content: string;
+  engagement: number;
+  reach: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  date: string;
 }
 
 // Sample data for demonstration
@@ -98,12 +125,128 @@ const engagementData = [
   { platform: 'Twitter', engagement: 3.1, followers: 5640 }
 ];
 
-export function Insights({ user }: InsightsProps) {
+export function Insights({ user, currentProject }: InsightsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('visitors');
-  const [showComingSoon, setShowComingSoon] = useState(true);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [socialAnalytics, setSocialAnalytics] = useState<SocialMediaAnalytics[]>([]);
+  const [postPerformance, setPostPerformance] = useState<PostPerformance[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isAdmin = user.role === 'Admin';
+
+  // Load social media analytics data
+  useEffect(() => {
+    const loadSocialAnalytics = async () => {
+      setIsLoading(true);
+      try {
+        // In a real app, this would fetch from your analytics API
+        // For now, we'll simulate loading data
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Simulate real analytics data based on current project
+        const mockAnalytics: SocialMediaAnalytics[] = [
+          {
+            platform: 'Instagram',
+            followers: 12450,
+            engagement: 6.8,
+            reach: 25600,
+            posts: 24,
+            growth30d: 12.3,
+            topPost: {
+              content: 'Community health tips that everyone should know! 💙',
+              engagement: 8.2,
+              date: '2024-01-15'
+            }
+          },
+          {
+            platform: 'Facebook',
+            followers: 8920,
+            engagement: 4.2,
+            reach: 18400,
+            posts: 18,
+            growth30d: 8.5,
+            topPost: {
+              content: 'Thank you to our amazing healthcare team!',
+              engagement: 5.1,
+              date: '2024-01-12'
+            }
+          },
+          {
+            platform: 'LinkedIn',
+            followers: 5640,
+            engagement: 5.9,
+            reach: 12800,
+            posts: 12,
+            growth30d: 15.7,
+            topPost: {
+              content: 'Professional insights on healthcare trends',
+              engagement: 7.3,
+              date: '2024-01-10'
+            }
+          },
+          {
+            platform: 'Twitter',
+            followers: 3280,
+            engagement: 3.1,
+            reach: 8900,
+            posts: 15,
+            growth30d: 5.2,
+            topPost: {
+              content: 'Quick health tip: Stay hydrated! 💧',
+              engagement: 4.5,
+              date: '2024-01-08'
+            }
+          }
+        ];
+
+        const mockPostPerformance: PostPerformance[] = [
+          {
+            id: '1',
+            platform: 'Instagram',
+            content: 'Community health tips that everyone should know! 💙',
+            engagement: 8.2,
+            reach: 3200,
+            likes: 245,
+            comments: 18,
+            shares: 12,
+            date: '2024-01-15'
+          },
+          {
+            id: '2',
+            platform: 'LinkedIn',
+            content: 'Professional insights on healthcare trends',
+            engagement: 7.3,
+            reach: 2100,
+            likes: 89,
+            comments: 15,
+            shares: 8,
+            date: '2024-01-10'
+          },
+          {
+            id: '3',
+            platform: 'Facebook',
+            content: 'Thank you to our amazing healthcare team!',
+            engagement: 5.1,
+            reach: 1800,
+            likes: 156,
+            comments: 22,
+            shares: 6,
+            date: '2024-01-12'
+          }
+        ];
+
+        setSocialAnalytics(mockAnalytics);
+        setPostPerformance(mockPostPerformance);
+      } catch (error) {
+        console.error('Error loading social analytics:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSocialAnalytics();
+  }, [currentProject]);
 
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
@@ -127,7 +270,11 @@ export function Insights({ user }: InsightsProps) {
 
   const totalWebsiteVisitors = websiteTrafficData.reduce((sum, day) => sum + day.visitors, 0);
   const avgDailyVisitors = Math.round(totalWebsiteVisitors / websiteTrafficData.length);
-  const totalSocialFollowers = Object.values(socialMediaData).reduce((sum, platform) => sum + platform.followers, 0);
+  const totalSocialFollowers = socialAnalytics.reduce((sum, platform) => sum + platform.followers, 0);
+  const avgEngagement = socialAnalytics.length > 0 
+    ? (socialAnalytics.reduce((sum, platform) => sum + platform.engagement, 0) / socialAnalytics.length).toFixed(1)
+    : '0.0';
+  const totalReach = socialAnalytics.reduce((sum, platform) => sum + platform.reach, 0);
 
   return (
     <div className="space-y-8">
@@ -198,7 +345,7 @@ export function Insights({ user }: InsightsProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-foreground/70 mb-1">Avg Engagement</p>
-                <p className="text-2xl text-foreground font-bold">5.2%</p>
+                <p className="text-2xl text-foreground font-bold">{avgEngagement}%</p>
                 <p className="text-xs text-foreground/60 mt-1">Across All Platforms</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
@@ -213,7 +360,7 @@ export function Insights({ user }: InsightsProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-foreground/70 mb-1">Total Reach</p>
-                <p className="text-2xl text-foreground font-bold">65.7K</p>
+                <p className="text-2xl text-foreground font-bold">{(totalReach / 1000).toFixed(1)}K</p>
                 <p className="text-xs text-foreground/60 mt-1">Last 30 Days</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
@@ -372,80 +519,125 @@ export function Insights({ user }: InsightsProps) {
 
         {/* Social Media Tab */}
         <TabsContent value="social" className="space-y-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Object.entries(socialMediaData).map(([platform, data]) => (
-              <Card key={platform} className="border-accent/20">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="text-primary">
-                          {getPlatformIcon(platform)}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {socialAnalytics.map((data) => (
+                  <Card key={data.platform} className="border-accent/20">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className="text-primary">
+                              {getPlatformIcon(data.platform)}
+                            </div>
+                            <h3 className="text-foreground font-medium capitalize">{data.platform}</h3>
+                          </div>
                         </div>
-                        <h3 className="text-foreground font-medium capitalize">{platform}</h3>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm text-foreground/70">Followers</p>
-                        <p className="text-xl text-foreground font-bold">{data.followers.toLocaleString()}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {formatGrowth(data.growth30d)}
-                          <span className="text-xs text-foreground/60">30 days</span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <p className="text-foreground/70">Engagement</p>
-                          <p className="text-foreground font-medium">{data.engagement}%</p>
-                        </div>
-                        <div>
-                          <p className="text-foreground/70">Reach</p>
-                          <p className="text-foreground font-medium">{(data.reach / 1000).toFixed(1)}K</p>
-                        </div>
-                      </div>
-                      
-                      <div className="pt-2 border-t border-accent/20">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-foreground/70">Total Growth</span>
-                          <div className="text-green-600 text-xs font-medium">
-                            +{data.growthTotal}%
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm text-foreground/70">Followers</p>
+                            <p className="text-xl text-foreground font-bold">{data.followers.toLocaleString()}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              {formatGrowth(data.growth30d)}
+                              <span className="text-xs text-foreground/60">30 days</span>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <p className="text-foreground/70">Engagement</p>
+                              <p className="text-foreground font-medium">{data.engagement}%</p>
+                            </div>
+                            <div>
+                              <p className="text-foreground/70">Reach</p>
+                              <p className="text-foreground font-medium">{(data.reach / 1000).toFixed(1)}K</p>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 border-t border-accent/20">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-foreground/70">Posts</span>
+                              <div className="text-blue-600 text-xs font-medium">
+                                {data.posts} posts
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Social Media Performance Chart */}
+              <Card className="border-accent/20">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Platform Engagement Comparison</CardTitle>
+                  <CardDescription>Engagement rates across all social media platforms</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={socialAnalytics} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="platform" className="text-xs" />
+                        <YAxis className="text-xs" />
+                        <Tooltip />
+                        <Bar 
+                          dataKey="engagement" 
+                          fill="var(--color-primary)" 
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
 
-          {/* Social Media Performance Chart */}
-          <Card className="border-accent/20">
-            <CardHeader>
-              <CardTitle className="text-foreground">Platform Engagement Comparison</CardTitle>
-              <CardDescription>Engagement rates across all social media platforms</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={engagementData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="platform" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip />
-                    <Bar 
-                      dataKey="engagement" 
-                      fill="var(--color-primary)" 
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Top Performing Posts */}
+              <Card className="border-accent/20">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Top Performing Posts</CardTitle>
+                  <CardDescription>Your best performing content across all platforms</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {postPerformance.map((post) => (
+                      <div key={post.id} className="p-4 border border-accent/20 rounded-lg hover:border-primary/50 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              {getPlatformIcon(post.platform)}
+                              <span className="text-sm font-medium text-foreground">{post.platform}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {post.engagement}% engagement
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-foreground/80 mb-3 line-clamp-2">{post.content}</p>
+                            <div className="flex items-center gap-4 text-xs text-foreground/60">
+                              <span>{post.likes} likes</span>
+                              <span>{post.comments} comments</span>
+                              <span>{post.shares} shares</span>
+                              <span>{post.reach.toLocaleString()} reach</span>
+                            </div>
+                          </div>
+                          <div className="text-right text-xs text-foreground/60">
+                            {new Date(post.date).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         {/* Performance Tab */}

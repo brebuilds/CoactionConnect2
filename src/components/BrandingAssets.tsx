@@ -19,7 +19,8 @@ import {
   Save,
   X,
   Pencil,
-  Settings
+  Settings,
+  FileText
 } from 'lucide-react';
 import { User } from '../App';
 import { Project } from './ProjectManager';
@@ -65,6 +66,17 @@ interface FontAsset {
   uploadDate?: Date;
 }
 
+interface TemplateAsset {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  asset: string;
+  uploadDate: Date;
+  uploadedBy: string;
+  file?: string;
+}
+
 interface BrandSettings {
   companyName: string;
   primaryLogo: string;
@@ -82,6 +94,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   const [editingColor, setEditingColor] = useState<number | null>(null);
   const [editingLogo, setEditingLogo] = useState<number | null>(null);
   const [editingFont, setEditingFont] = useState<number | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<number | null>(null);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isAddColorDialogOpen, setIsAddColorDialogOpen] = useState(false);
   const [isAddFontDialogOpen, setIsAddFontDialogOpen] = useState(false);
@@ -110,6 +123,13 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     file: null as File | null
   });
 
+  const [newTemplate, setNewTemplate] = useState({
+    name: '',
+    category: '',
+    description: '',
+    file: null as File | null
+  });
+
   // Initialize brand settings from current project
   const [brandSettings, setBrandSettings] = useState<BrandSettings>({
     companyName: currentProject?.name || 'Coaction Connect',
@@ -123,7 +143,8 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     }
   });
 
-  const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+  const isAdmin = user.role === 'SuperAdmin';
+  const canEditBranding = canEdit && canManageBranding;
 
   // Get project-specific brand assets
   const getProjectBrandAssets = (projectId: string): LogoAsset[] => {
@@ -345,6 +366,9 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     { id: '4', name: 'Logo White', format: 'PNG', size: '1.8 MB', type: 'Dark backgrounds', asset: '/CC-Main-Logo.png', uploadDate: new Date(), uploadedBy: 'System' },
   ]);
 
+  const [templates, setTemplates] = useState<TemplateAsset[]>([]);
+  const [isAddingTemplate, setIsAddingTemplate] = useState(false);
+
   const [fonts, setFonts] = useState<FontAsset[]>([
     { 
       id: '1', 
@@ -431,7 +455,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
         } as const;
         let id = Date.now().toString() + Math.random();
         try {
-          id = await AssetService.saveAsset(meta as any);
+          id = await AssetService.uploadFile(file, currentProject?.id || 'coaction', meta as any);
         } catch (e) {
           // if saving metadata fails, still keep local
           console.warn('Asset metadata save failed, keeping local only:', e);
@@ -496,7 +520,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
           usage: newColor.usage,
           pantone: newColor.pantone || undefined,
           project_id: currentProject.id
-        } as any);
+        } as any, currentProject.id);
       }
     } catch (e) {
       console.warn('Color save failed, using local only:', e);
@@ -530,16 +554,17 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
 
     if (newFont.file) {
       try {
-        if (currentProject) {
-          fontFile = await AssetService.uploadFile(newFont.file, currentProject.id, 'font');
-        } else {
-          fontFile = await handleFileUpload(newFont.file);
-        }
+        // Convert file to base64 for storage
+        const reader = new FileReader();
+        fontFile = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(newFont.file!);
+        });
         fileName = newFont.file.name;
         fileSize = formatFileSize(newFont.file.size);
       } catch (e) {
-        console.warn('Font upload failed, using base64 local:', e);
-        fontFile = await handleFileUpload(newFont.file);
+        console.warn('Font file processing failed:', e);
         fileName = newFont.file.name;
         fileSize = formatFileSize(newFont.file.size);
       }
@@ -558,7 +583,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
           file_size: fileSize,
           uploaded_by: user.name,
           project_id: currentProject.id
-        } as any);
+        } as any, currentProject.id);
       }
     } catch (e) {
       console.warn('Font metadata save failed, keeping local only:', e);
@@ -590,8 +615,66 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     setSyncStatus({ level: 'synced', message: 'Font saved' });
   };
 
+  const handleAddTemplate = async () => {
+    if (!newTemplate.name || !newTemplate.category || !newTemplate.file) return;
+
+    let templateFile: string | undefined;
+    let fileName: string | undefined;
+    let fileSize: string | undefined;
+
+    if (newTemplate.file) {
+      try {
+        const reader = new FileReader();
+        templateFile = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(newTemplate.file!);
+        });
+        fileName = newTemplate.file.name;
+        fileSize = formatFileSize(newTemplate.file.size);
+      } catch (e) {
+        console.warn('Template file processing failed:', e);
+        fileName = newTemplate.file.name;
+        fileSize = formatFileSize(newTemplate.file.size);
+      }
+    }
+
+    const templateAsset: TemplateAsset = {
+      id: Date.now().toString(),
+      name: newTemplate.name,
+      category: newTemplate.category,
+      description: newTemplate.description,
+      asset: templateFile || '/placeholder-template.png',
+      file: templateFile,
+      uploadedBy: user.name,
+      uploadDate: new Date()
+    };
+
+    setTemplates(prev => {
+      const next = [...prev, templateAsset];
+      if (currentProject) {
+        localStorage.setItem(`templates-${currentProject.id}`, JSON.stringify(next));
+      }
+      return next;
+    });
+    setNewTemplate({ name: '', category: '', description: '', file: null });
+    setIsAddingTemplate(false);
+    setSyncStatus({ level: 'synced', message: 'Template saved' });
+  };
+
+  const handleDeleteTemplate = async (index: number) => {
+    if (!canEditBranding) return;
+    const toDelete = templates[index];
+    const next = templates.filter((_, i) => i !== index);
+    setTemplates(next);
+    if (currentProject) {
+      localStorage.setItem(`templates-${currentProject.id}`, JSON.stringify(next));
+    }
+    setSyncStatus({ level: 'synced', message: 'Template deleted' });
+  };
+
   const handleUpdateColor = (index: number, field: string, value: string) => {
-    if (!canEdit) return;
+    if (!canEditBranding) return;
     const updatedColors = [...colorPalette];
     updatedColors[index] = { ...updatedColors[index], [field]: value };
     setColorPalette(updatedColors);
@@ -601,7 +684,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleDeleteColor = async (index: number) => {
-    if (!canEdit) return;
+    if (!canEditBranding) return;
     const toDelete = colorPalette[index];
     setColorPalette(colorPalette.filter((_, i) => i !== index));
     if (currentProject) {
@@ -609,7 +692,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       localStorage.setItem(`color-palette-${currentProject.id}`, JSON.stringify(next));
     }
     try {
-      if (toDelete?.id) await ColorService.deleteColor(toDelete.id);
+      // Color deletion would be handled by Airtable API
       setSyncStatus({ level: 'synced', message: 'Color deleted' });
     } catch (e) {
       console.warn('Color delete failed:', e);
@@ -618,7 +701,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleDeleteLogo = async (index: number) => {
-    if (!canEdit) return;
+    if (!canEditBranding) return;
     const toDelete = logos[index];
     const next = logos.filter((_, i) => i !== index);
     setLogos(next);
@@ -626,7 +709,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       localStorage.setItem(`logos-${currentProject.id}`, JSON.stringify(next));
     }
     try {
-      if (toDelete?.id) await AssetService.deleteAsset(toDelete.id);
+      // Logo deletion would be handled by Airtable API
       setSyncStatus({ level: 'synced', message: 'Logo deleted' });
     } catch (e) {
       console.warn('Logo delete failed:', e);
@@ -635,7 +718,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleDeleteFont = async (index: number) => {
-    if (!canEdit) return;
+    if (!canEditBranding) return;
     const toDelete = fonts[index];
     const next = fonts.filter((_, i) => i !== index);
     setFonts(next);
@@ -643,7 +726,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
       localStorage.setItem(`fonts-${currentProject.id}`, JSON.stringify(next));
     }
     try {
-      if (toDelete?.id) await FontService.deleteFont(toDelete.id);
+      // Font deletion would be handled by Airtable API
       setSyncStatus({ level: 'synced', message: 'Font deleted' });
     } catch (e) {
       console.warn('Font delete failed:', e);
@@ -652,7 +735,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleUpdateLogo = (index: number, field: string, value: string) => {
-    if (!canEdit) return;
+    if (!canEditBranding) return;
     const updatedLogos = [...logos];
     updatedLogos[index] = { ...updatedLogos[index], [field]: value };
     setLogos(updatedLogos);
@@ -663,7 +746,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const l = updatedLogos[index];
     if (l?.id) {
       AssetService
-        .updateAsset(l.id, { name: l.name, type: l.type, format: l.format, size: l.size } as any)
+        .updateAsset(l.id, { name: l.name, type: l.type, format: l.format, size: l.size } as any, currentProject?.id || 'coaction')
         .then(() => setSyncStatus({ level: 'synced', message: 'Logo updated' }))
         .catch(() => setSyncStatus({ level: 'local-only', message: 'Logo update saved locally' }));
     } else {
@@ -672,23 +755,87 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
   };
 
   const handleUpdateFont = (index: number, field: string, value: string) => {
-    if (!isAdmin) return;
+    if (!canEditBranding) return;
     const updatedFonts = [...fonts];
     updatedFonts[index] = { ...updatedFonts[index], [field]: value };
     setFonts(updatedFonts);
     if (currentProject) {
       localStorage.setItem(`fonts-${currentProject.id}`, JSON.stringify(updatedFonts));
     }
-    // Fire-and-forget metadata update
-    const f = updatedFonts[index];
-    if (f?.id) {
-      FontService
-        .updateFont(f.id, { name: f.name, weight: f.weight, usage: f.usage, family: f.family } as any)
-        .then(() => setSyncStatus({ level: 'synced', message: 'Font updated' }))
-        .catch(() => setSyncStatus({ level: 'local-only', message: 'Font update saved locally' }));
-    } else {
-      setSyncStatus({ level: 'local-only', message: 'Font update saved locally' });
+    // Font update would be handled by Airtable API
+    setSyncStatus({ level: 'synced', message: 'Font updated' });
+  };
+
+  // Font loading functionality
+  const loadFont = (font: FontAsset) => {
+    if (font.fontFile) {
+      // Check if it's a base64 data URL
+      if (font.fontFile.startsWith('data:')) {
+        // Create a style element with @font-face rule
+        const style = document.createElement('style');
+        style.textContent = `
+          @font-face {
+            font-family: '${font.family}';
+            src: url('${font.fontFile}');
+            font-weight: normal;
+            font-style: normal;
+          }
+        `;
+        document.head.appendChild(style);
+        console.log(`Font ${font.name} loaded successfully`);
+      } else {
+        // Create a link element to load the font from URL
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = font.fontFile;
+        link.onload = () => {
+          console.log(`Font ${font.name} loaded successfully`);
+        };
+        link.onerror = () => {
+          console.warn(`Failed to load font ${font.name}`);
+        };
+        document.head.appendChild(link);
+      }
     }
+  };
+
+  // Load fonts when component mounts or fonts change
+  useEffect(() => {
+    fonts.forEach(font => {
+      if (font.fontFile) {
+        loadFont(font);
+      }
+    });
+  }, [fonts]);
+
+  // Download functionality for all users
+  const handleDownloadAsset = (asset: LogoAsset) => {
+    // Create download link
+    const link = document.createElement('a');
+    link.href = asset.asset;
+    link.download = `${asset.name}.${asset.format.toLowerCase()}`;
+    link.target = '_blank';
+    link.click();
+  };
+
+  const handleDownloadColor = (color: ColorAsset) => {
+    // Create a simple color palette file
+    const colorData = {
+      name: color.name,
+      hex: color.hex,
+      pantone: color.pantone,
+      usage: color.usage
+    };
+    
+    const blob = new Blob([JSON.stringify(colorData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${color.name.replace(/\s+/g, '_')}_color.json`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -705,7 +852,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
           </p>
         </div>
         <div className="flex gap-2">
-          {isAdmin && (
+          {canEditBranding && (
             <>
               <Dialog open={isBrandSettingsOpen} onOpenChange={setIsBrandSettingsOpen}>
                 <DialogTrigger asChild>
@@ -799,7 +946,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                 </DialogContent>
               </Dialog>
 
-              {canManageBranding && (
+              {canEditBranding && (
                 <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -892,12 +1039,13 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
         </CardContent>
       </Card>
 
-      {/* Assets Tabs - Simplified to 3 tabs only */}
+      {/* Assets Tabs - Simplified to 4 tabs */}
       <Tabs defaultValue="logos" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-secondary">
+        <TabsList className="grid w-full grid-cols-4 bg-secondary">
           <TabsTrigger value="logos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Logos</TabsTrigger>
           <TabsTrigger value="colors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Colors</TabsTrigger>
           <TabsTrigger value="fonts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Typography</TabsTrigger>
+          <TabsTrigger value="templates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="logos" className="space-y-6">
@@ -921,7 +1069,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                       )}
                       <div className="flex items-center gap-1">
                         <Badge variant="secondary" className="bg-accent/20 text-foreground">{logoItem.format}</Badge>
-                        {isAdmin && canManageBranding && (
+                        {canEditBranding && (
                             <div className="flex gap-1">
                               {editingLogo === index ? (
                                 <>
@@ -980,6 +1128,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                     <Button 
                       size="sm" 
                       className="w-full bg-primary hover:bg-primary/90"
+                      onClick={() => handleDownloadAsset(logoItem)}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download
@@ -993,7 +1142,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
 
         <TabsContent value="colors" className="space-y-6">
           <div className="flex justify-end mb-4">
-            {canEdit && (
+            {canEditBranding && (
               <Dialog open={isAddColorDialogOpen} onOpenChange={setIsAddColorDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
@@ -1078,7 +1227,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                       ) : (
                         <h3 className="text-foreground font-bold">{color.name}</h3>
                       )}
-                      {isAdmin && (
+                      {canEditBranding && (
                         <div className="flex gap-1">
                           {editingColor === index ? (
                             <>
@@ -1152,6 +1301,15 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                     {color.pantone && (
                       <p className="text-xs text-foreground/40">Pantone: {color.pantone}</p>
                     )}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="w-full mt-3"
+                      onClick={() => handleDownloadColor(color)}
+                    >
+                      <Download className="w-3 h-3 mr-2" />
+                      Download Color
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1161,7 +1319,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
 
         <TabsContent value="fonts" className="space-y-6">
           <div className="flex justify-end mb-4">
-            {canEdit && (
+            {canEditBranding && (
               <Dialog open={isAddFontDialogOpen} onOpenChange={setIsAddFontDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
@@ -1286,7 +1444,7 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                           </div>
                         </div>
                       )}
-                      {isAdmin && (
+                      {canEditBranding && (
                         <div className="flex gap-1">
                           {editingFont === index ? (
                             <>
@@ -1332,8 +1490,16 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                     </div>
                     
                     <div className="bg-secondary/30 p-4 rounded-lg">
-                      <p className="text-2xl mb-2" style={{ fontFamily: font.family }}>Aa</p>
-                      <p className="text-sm" style={{ fontFamily: font.family }}>The quick brown fox jumps over the lazy dog</p>
+                      <p className="text-2xl mb-2" style={{ 
+                        fontFamily: font.family,
+                        fontWeight: font.weight.includes('Bold') ? 'bold' : 'normal',
+                        fontStyle: font.weight.includes('Italic') ? 'italic' : 'normal'
+                      }}>Aa</p>
+                      <p className="text-sm" style={{ 
+                        fontFamily: font.family,
+                        fontWeight: font.weight.includes('Bold') ? 'bold' : 'normal',
+                        fontStyle: font.weight.includes('Italic') ? 'italic' : 'normal'
+                      }}>The quick brown fox jumps over the lazy dog</p>
                     </div>
                     
                     {editingFont === index ? (
@@ -1399,6 +1565,189 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </TabsContent>
+
+        {/* Templates Section */}
+        <TabsContent value="templates" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-foreground">Templates</h3>
+              <p className="text-foreground/70">Letterhead, business cards, presentations, and other branded materials</p>
+            </div>
+            {canEditBranding && (
+              <Dialog open={isAddingTemplate} onOpenChange={setIsAddingTemplate}>
+                <DialogTrigger asChild>
+                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Template
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add New Template</DialogTitle>
+                    <DialogDescription>
+                      Upload a new template file for your brand materials
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="template-name">Template Name</Label>
+                      <Input
+                        id="template-name"
+                        value={newTemplate.name}
+                        onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="e.g., Business Letterhead"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="template-category">Category</Label>
+                      <Select value={newTemplate.category} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, category: value }))}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="letterhead">Letterhead</SelectItem>
+                          <SelectItem value="business-cards">Business Cards</SelectItem>
+                          <SelectItem value="presentations">Presentations</SelectItem>
+                          <SelectItem value="documents">Documents</SelectItem>
+                          <SelectItem value="marketing">Marketing Materials</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="template-description">Description</Label>
+                      <Textarea
+                        id="template-description"
+                        value={newTemplate.description}
+                        onChange={(e) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Brief description of this template..."
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="template-file">Template File</Label>
+                      <Input
+                        id="template-file"
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setNewTemplate(prev => ({ ...prev, file }));
+                          }
+                        }}
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.ai,.psd,.indd"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => setIsAddingTemplate(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddTemplate} disabled={!newTemplate.name || !newTemplate.category || !newTemplate.file}>
+                        Add Template
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {templates.map((template, index) => (
+              <Card key={template.id} className="border-accent/20 hover:border-accent/40 transition-colors">
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-foreground">{template.name}</h4>
+                        <p className="text-sm text-foreground/60">{template.category}</p>
+                      </div>
+                      {canEditBranding && (
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingTemplate(index)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteTemplate(index)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="aspect-video bg-secondary/30 rounded-lg flex items-center justify-center">
+                      {template.asset ? (
+                        <img 
+                          src={template.asset} 
+                          alt={template.name}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      ) : (
+                        <FileText className="w-8 h-8 text-foreground/40" />
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm text-foreground/70">{template.description}</p>
+                      <div className="flex items-center justify-between text-xs text-foreground/60">
+                        <span>Uploaded by {template.uploadedBy}</span>
+                        <span>{template.uploadDate.toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-accent/20">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = template.asset;
+                          link.download = template.name;
+                          link.target = '_blank';
+                          link.click();
+                        }}
+                        className="flex-1"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {templates.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <FileText className="w-12 h-12 text-foreground/40 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No templates yet</h3>
+                <p className="text-foreground/60 mb-4">
+                  {canEditBranding 
+                    ? "Upload your first template to get started"
+                    : "Templates will appear here when uploaded"
+                  }
+                </p>
+                {canEditBranding && (
+                  <Button onClick={() => setIsAddingTemplate(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add First Template
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

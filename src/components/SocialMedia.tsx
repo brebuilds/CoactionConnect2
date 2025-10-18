@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { User } from "../App";
 import { Project } from "./ProjectManager";
-import { GraphicTemplateService } from "../airtable/services";
+import { GraphicTemplateService, ContentBankService } from "../airtable/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
+import { Slider } from "./ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   Plus,
   Calendar,
@@ -42,7 +44,17 @@ import {
   MessageCircle,
   Sparkles,
   Download,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Type,
+  Move,
+  RotateCcw,
+  Save,
+  Eye,
+  Bold,
+  Italic,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from "lucide-react";
 
 interface SocialMediaProps {
@@ -93,11 +105,88 @@ interface GraphicTemplate {
   tags?: string[];
 }
 
+interface TextOverlay {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+  fontWeight: 'normal' | 'bold';
+  fontStyle: 'normal' | 'italic';
+  textAlign: 'left' | 'center' | 'right';
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
+interface TemplateEditor {
+  isOpen: boolean;
+  template: GraphicTemplate | null;
+  textOverlays: TextOverlay[];
+  selectedOverlay: string | null;
+  canvasSize: { width: number; height: number };
+}
+
+interface ContentItem {
+  id: string;
+  title: string;
+  text: string;
+  category: string;
+  tags: string[];
+  type: 'caption' | 'post' | 'hashtag' | 'quote';
+  platform: string;
+  tone: string;
+  usageCount: number;
+  createdBy: string;
+  createdAt: Date;
+}
+
+interface ContentBank {
+  isOpen: boolean;
+  selectedContent: ContentItem | null;
+  filters: {
+    category: string;
+    type: string;
+    platform: string;
+  };
+}
+
+interface SocialAccount {
+  id: string;
+  platform: string;
+  username: string;
+  isConnected: boolean;
+  lastSync?: Date;
+}
+
+interface SocialConnections {
+  isOpen: boolean;
+  accounts: SocialAccount[];
+  isConnecting: boolean;
+}
+
 const PLATFORMS = ['Facebook', 'Instagram', 'Twitter', 'LinkedIn', 'TikTok', 'YouTube'];
 const POST_TYPES = ['Reel', 'Carousel', 'Static Post', 'Story', 'Ad'];
 const GOALS = ['Engagement', 'Sales', 'Awareness', 'Testimonials', 'Education'];
 const TONES = ['Playful', 'Professional', 'Bold', 'Minimal', 'Compassionate', 'Inspiring'];
 const TEMPLATE_CATEGORIES = ['All', 'Social Posts', 'Stories', 'Quotes', 'Announcements', 'Testimonials', 'Events', 'Health Tips', 'Promotions'];
+
+// Font options for text overlay
+const FONT_FAMILIES = [
+  'Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Verdana', 
+  'Trebuchet MS', 'Arial Black', 'Impact', 'Comic Sans MS', 'Courier New'
+];
+
+const FONT_COLORS = [
+  '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', 
+  '#FFFF00', '#FF00FF', '#00FFFF', '#800000', '#008000', '#000080'
+];
+
+// Content Bank constants
+const CONTENT_TYPES = ['caption', 'post', 'hashtag', 'quote'];
+const CONTENT_CATEGORIES = ['Health Tips', 'Announcements', 'Testimonials', 'Educational', 'Promotional', 'Community', 'Events', 'General'];
+const CONTENT_TONES = ['Professional', 'Friendly', 'Inspiring', 'Educational', 'Promotional', 'Casual'];
 
 export function SocialMedia({ user, currentProject, canEdit = true, onAddActivity, onPendingPostsChange }: SocialMediaProps) {
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -156,6 +245,49 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
+  // Template Editor state
+  const [templateEditor, setTemplateEditor] = useState<TemplateEditor>({
+    isOpen: false,
+    template: null,
+    textOverlays: [],
+    selectedOverlay: null,
+    canvasSize: { width: 800, height: 800 }
+  });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Content Bank state
+  const [contentBank, setContentBank] = useState<ContentBank>({
+    isOpen: false,
+    selectedContent: null,
+    filters: { category: '', type: '', platform: '' }
+  });
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
+  const [isContentBankLoading, setIsContentBankLoading] = useState(false);
+  const [newContent, setNewContent] = useState({
+    title: '',
+    text: '',
+    category: '',
+    type: 'caption' as const,
+    platform: '',
+    tone: '',
+    tags: ''
+  });
+  const [isAddContentDialogOpen, setIsAddContentDialogOpen] = useState(false);
+
+  // Social Media Connections state
+  const [socialConnections, setSocialConnections] = useState<SocialConnections>({
+    isOpen: false,
+    accounts: [
+      { id: 'facebook', platform: 'Facebook', username: 'Not Connected', isConnected: false },
+      { id: 'instagram', platform: 'Instagram', username: 'Not Connected', isConnected: false },
+      { id: 'twitter', platform: 'Twitter', username: 'Not Connected', isConnected: false },
+      { id: 'linkedin', platform: 'LinkedIn', username: 'Not Connected', isConnected: false }
+    ],
+    isConnecting: false
+  });
+
   // Load posts and templates
   useEffect(() => {
     if (currentProject) {
@@ -174,9 +306,13 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
       // Load graphic templates from Airtable
       loadTemplatesFromAirtable();
 
+      // Load content bank
+      loadContentBank();
+
       // Set up polling for 2-way sync (check for updates every 30 seconds)
       const syncInterval = setInterval(() => {
         loadTemplatesFromAirtable();
+        loadContentBank();
       }, 30000); // 30 seconds
 
       // Cleanup interval on unmount
@@ -205,6 +341,30 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
     }
   };
 
+  // Load content bank from Airtable
+  const loadContentBank = async () => {
+    if (!currentProject) return;
+
+    setIsContentBankLoading(true);
+    try {
+      const content = await ContentBankService.getContent(currentProject.id, contentBank.filters);
+      setContentItems(content);
+    } catch (error) {
+      console.error('Error loading content bank from Airtable:', error);
+      // Fallback to localStorage
+      const savedContent = localStorage.getItem(`content-bank-${currentProject.id}`);
+      if (savedContent) {
+        const parsedContent = JSON.parse(savedContent).map((item: any) => ({
+          ...item,
+          createdAt: new Date(item.createdAt)
+        }));
+        setContentItems(parsedContent);
+      }
+    } finally {
+      setIsContentBankLoading(false);
+    }
+  };
+
   // Save posts to localStorage and update pending count
   useEffect(() => {
     if (currentProject) {
@@ -220,6 +380,67 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
 
   // Note: Graphic templates are now saved to Airtable automatically on upload/delete
   // No need for localStorage syncing
+
+  // AI-powered caption optimization for different platforms
+  const optimizeCaptionForPlatform = (caption: string, platform: string): string => {
+    const optimizations = {
+      'Instagram': {
+        maxLength: 2200,
+        hashtagCount: 30,
+        emojiUsage: 'high',
+        lineBreaks: true
+      },
+      'Facebook': {
+        maxLength: 63206,
+        hashtagCount: 5,
+        emojiUsage: 'medium',
+        lineBreaks: true
+      },
+      'Twitter': {
+        maxLength: 280,
+        hashtagCount: 3,
+        emojiUsage: 'low',
+        lineBreaks: false
+      },
+      'LinkedIn': {
+        maxLength: 3000,
+        hashtagCount: 5,
+        emojiUsage: 'low',
+        lineBreaks: true
+      },
+      'TikTok': {
+        maxLength: 300,
+        hashtagCount: 5,
+        emojiUsage: 'high',
+        lineBreaks: false
+      },
+      'YouTube': {
+        maxLength: 5000,
+        hashtagCount: 15,
+        emojiUsage: 'medium',
+        lineBreaks: true
+      }
+    };
+
+    const config = optimizations[platform as keyof typeof optimizations] || optimizations.Instagram;
+    let optimizedCaption = caption;
+
+    // Truncate if too long
+    if (optimizedCaption.length > config.maxLength) {
+      optimizedCaption = optimizedCaption.substring(0, config.maxLength - 3) + '...';
+    }
+
+    // Add platform-specific optimizations
+    if (platform === 'Instagram' && !optimizedCaption.includes('#')) {
+      optimizedCaption += '\n\n#healthcare #wellness #community';
+    }
+
+    if (platform === 'Twitter' && optimizedCaption.length > 200) {
+      optimizedCaption = optimizedCaption.substring(0, 200) + '...';
+    }
+
+    return optimizedCaption;
+  };
 
   const handleGenerateContent = () => {
     if (!agentForm.postType || !agentForm.goal || !agentForm.prompt) return;
@@ -340,6 +561,50 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
 
     if (onAddActivity && post) {
       onAddActivity('Delete Post', 'Social Media', `Deleted ${post.platform} post`);
+    }
+  };
+
+  const handlePublishPost = async (post: SocialPost) => {
+    try {
+      // Simulate posting to social media platforms
+      const results = await Promise.allSettled(
+        [post.platform].map(async (platform: string) => {
+          // In a real app, this would call the actual social media APIs
+          await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+          
+          // Simulate success/failure
+          const success = Math.random() > 0.1; // 90% success rate
+          
+          if (success) {
+            return { platform, status: 'success', message: `Posted to ${platform}` };
+          } else {
+            throw new Error(`Failed to post to ${platform}`);
+          }
+        })
+      );
+
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (successful > 0) {
+        // Update post status
+        setPosts(prev => prev.map(p => 
+          p.id === post.id 
+            ? { ...p, status: 'published' as const, publishedDate: new Date() }
+            : p
+        ));
+
+        if (onAddActivity) {
+          onAddActivity('Publish Post', 'Social Media', `Published ${post.platform} post`);
+        }
+
+        alert(`Successfully posted to ${successful} platform(s)${failed > 0 ? `, ${failed} failed` : ''}`);
+      } else {
+        alert('Failed to post to any platforms. Please check your API connections.');
+      }
+    } catch (error) {
+      console.error('Error publishing post:', error);
+      alert('Failed to publish post. Please try again.');
     }
   };
 
@@ -536,6 +801,334 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Canvas drawing functions
+  const drawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !templateEditor.template) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw background image
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Draw text overlays
+      templateEditor.textOverlays.forEach(overlay => {
+        drawTextOverlay(ctx, overlay);
+      });
+    };
+    img.src = templateEditor.template.imageUrl;
+  }, [templateEditor.template, templateEditor.textOverlays]);
+
+  const drawTextOverlay = (ctx: CanvasRenderingContext2D, overlay: TextOverlay) => {
+    ctx.save();
+    
+    // Set text properties
+    ctx.font = `${overlay.fontStyle} ${overlay.fontWeight} ${overlay.fontSize}px ${overlay.fontFamily}`;
+    ctx.fillStyle = overlay.color;
+    ctx.textAlign = overlay.textAlign;
+    ctx.textBaseline = 'top';
+    
+    // Draw text
+    const lines = overlay.text.split('\n');
+    let y = overlay.y;
+    
+    lines.forEach(line => {
+      ctx.fillText(line, overlay.x, y);
+      y += overlay.fontSize * 1.2; // Line height
+    });
+    
+    // Draw selection border if selected
+    if (templateEditor.selectedOverlay === overlay.id) {
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(overlay.x - 5, overlay.y - 5, overlay.maxWidth || 200, overlay.maxHeight || overlay.fontSize * 1.5);
+      ctx.setLineDash([]);
+    }
+    
+    ctx.restore();
+  };
+
+  // Template editor functions
+  const openTemplateEditor = (template: GraphicTemplate) => {
+    setTemplateEditor({
+      isOpen: true,
+      template,
+      textOverlays: [],
+      selectedOverlay: null,
+      canvasSize: { width: 800, height: 800 }
+    });
+  };
+
+  const addTextOverlay = () => {
+    const newOverlay: TextOverlay = {
+      id: Date.now().toString(),
+      text: 'Your text here',
+      x: 50,
+      y: 50,
+      fontSize: 24,
+      fontFamily: 'Arial',
+      color: '#000000',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      textAlign: 'left',
+      maxWidth: 200,
+      maxHeight: 100
+    };
+
+    setTemplateEditor(prev => ({
+      ...prev,
+      textOverlays: [...prev.textOverlays, newOverlay],
+      selectedOverlay: newOverlay.id
+    }));
+  };
+
+  const updateTextOverlay = (id: string, updates: Partial<TextOverlay>) => {
+    setTemplateEditor(prev => ({
+      ...prev,
+      textOverlays: prev.textOverlays.map(overlay =>
+        overlay.id === id ? { ...overlay, ...updates } : overlay
+      )
+    }));
+  };
+
+  const deleteTextOverlay = (id: string) => {
+    setTemplateEditor(prev => ({
+      ...prev,
+      textOverlays: prev.textOverlays.filter(overlay => overlay.id !== id),
+      selectedOverlay: prev.selectedOverlay === id ? null : prev.selectedOverlay
+    }));
+  };
+
+  const selectTextOverlay = (id: string) => {
+    setTemplateEditor(prev => ({
+      ...prev,
+      selectedOverlay: id
+    }));
+  };
+
+  // Canvas mouse events
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!templateEditor.selectedOverlay) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setIsDragging(true);
+    setDragOffset({ x, y });
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDragging || !templateEditor.selectedOverlay) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const deltaX = x - dragOffset.x;
+    const deltaY = y - dragOffset.y;
+
+    const selectedOverlay = templateEditor.textOverlays.find(o => o.id === templateEditor.selectedOverlay);
+    if (selectedOverlay) {
+      updateTextOverlay(selectedOverlay.id, {
+        x: Math.max(0, Math.min(canvas.width - (selectedOverlay.maxWidth || 200), selectedOverlay.x + deltaX)),
+        y: Math.max(0, Math.min(canvas.height - (selectedOverlay.maxHeight || 100), selectedOverlay.y + deltaY))
+      });
+    }
+
+    setDragOffset({ x, y });
+  };
+
+  const handleCanvasMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Find clicked overlay
+    const clickedOverlay = templateEditor.textOverlays.find(overlay => {
+      return x >= overlay.x && x <= overlay.x + (overlay.maxWidth || 200) &&
+             y >= overlay.y && y <= overlay.y + (overlay.maxHeight || 100);
+    });
+
+    if (clickedOverlay) {
+      selectTextOverlay(clickedOverlay.id);
+    } else {
+      selectTextOverlay('');
+    }
+  };
+
+  // Export generated image
+  const exportGeneratedImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const link = document.createElement('a');
+    link.download = `generated-${templateEditor.template?.name || 'template'}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  // Redraw canvas when overlays change
+  useEffect(() => {
+    if (templateEditor.isOpen) {
+      drawCanvas();
+    }
+  }, [templateEditor.textOverlays, templateEditor.selectedOverlay, drawCanvas]);
+
+  // Content Bank functions
+  const openContentBank = () => {
+    setContentBank(prev => ({ ...prev, isOpen: true }));
+    loadContentBank();
+  };
+
+  const selectContent = (content: ContentItem) => {
+    setContentBank(prev => ({ ...prev, selectedContent: content }));
+  };
+
+  const useContentInPost = (content: ContentItem) => {
+    // Update the new post form with selected content
+    setNewPost(prev => ({
+      ...prev,
+      caption: content.text,
+      platform: content.platform || prev.platform
+    }));
+    
+    // Update usage count in Airtable
+    ContentBankService.updateUsage(content.id);
+    
+    // Close content bank
+    setContentBank(prev => ({ ...prev, isOpen: false, selectedContent: null }));
+    
+    // Open create post dialog
+    setIsCreateDialogOpen(true);
+  };
+
+  const addContentToBank = async () => {
+    if (!newContent.title || !newContent.text || !currentProject) return;
+
+    const contentData = {
+      title: newContent.title,
+      text: newContent.text,
+      category: newContent.category,
+      type: newContent.type,
+      platform: newContent.platform,
+      tone: newContent.tone,
+      tags: newContent.tags ? newContent.tags.split(',').map(t => t.trim()) : [],
+      createdBy: user.name
+    };
+
+    try {
+      const contentId = await ContentBankService.saveContent(contentData, currentProject.id);
+      
+      // Add to local state
+      const newContentItem: ContentItem = {
+        id: contentId,
+        ...contentData,
+        usageCount: 0,
+        createdAt: new Date()
+      };
+      
+      setContentItems(prev => [newContentItem, ...prev]);
+      setNewContent({ title: '', text: '', category: '', type: 'caption', platform: '', tone: '', tags: '' });
+      setIsAddContentDialogOpen(false);
+
+      if (onAddActivity) {
+        onAddActivity('Add Content', 'Content Bank', `Added "${newContent.title}" to content bank`);
+      }
+    } catch (error) {
+      console.error('Error adding content to bank:', error);
+      alert('Failed to add content. Please try again.');
+    }
+  };
+
+  const filterContent = (filters: { category?: string; type?: string; platform?: string }) => {
+    setContentBank(prev => ({ ...prev, filters }));
+    loadContentBank();
+  };
+
+  // Social Media Connection functions
+  const openSocialConnections = () => {
+    setSocialConnections(prev => ({ ...prev, isOpen: true }));
+  };
+
+  const connectSocialAccount = async (platform: string) => {
+    setSocialConnections(prev => ({ ...prev, isConnecting: true }));
+    
+    // Simulate OAuth connection (in production, this would use actual OAuth flows)
+    setTimeout(() => {
+      setSocialConnections(prev => ({
+        ...prev,
+        accounts: prev.accounts.map(account => 
+          account.platform === platform 
+            ? { ...account, isConnected: true, username: `@${platform.toLowerCase()}user`, lastSync: new Date() }
+            : account
+        ),
+        isConnecting: false
+      }));
+    }, 2000);
+  };
+
+  const disconnectSocialAccount = (platform: string) => {
+    setSocialConnections(prev => ({
+      ...prev,
+      accounts: prev.accounts.map(account => 
+        account.platform === platform 
+          ? { ...account, isConnected: false, username: 'Not Connected', lastSync: undefined }
+          : account
+      )
+    }));
+  };
+
+  // Enhanced post creation with AI optimization
+  const handleCreatePostWithOptimization = () => {
+    if (!newPost.platform || !newPost.caption) return;
+
+    // Optimize caption for the selected platform
+    const optimizedCaption = optimizeCaptionForPlatform(newPost.caption, newPost.platform);
+
+    const post: SocialPost = {
+      id: Date.now().toString(),
+      platform: newPost.platform,
+      caption: optimizedCaption,
+      imageUrl: newPost.imageUrl || undefined,
+      status: newPost.status,
+      scheduledDate: newPost.scheduledDate ? new Date(newPost.scheduledDate) : undefined,
+      createdBy: user.name,
+      createdAt: new Date(),
+      pillar: newPost.pillar,
+      postType: newPost.postType,
+      goal: newPost.goal
+    };
+
+    setPosts(prev => [post, ...prev]);
+    setNewPost({ platform: '', caption: '', imageUrl: '', status: 'draft', scheduledDate: '', pillar: '', postType: '', goal: '' });
+    setIsCreateDialogOpen(false);
+
+    if (onAddActivity) {
+      onAddActivity('Create Post', 'Social Media', `Created optimized ${newPost.platform} post`);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* 1. HERO BANNER / QUICK OVERVIEW */}
@@ -551,13 +1144,23 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
             </p>
           </div>
           {canEdit && (
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-white text-primary hover:bg-white/90 shadow-md"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Quick Create Post
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-white text-primary hover:bg-white/90 shadow-md"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Quick Create Post
+              </Button>
+              <Button
+                onClick={openContentBank}
+                variant="outline"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Content Bank
+              </Button>
+            </div>
           )}
         </div>
 
@@ -837,6 +1440,79 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
         </CardContent>
       </Card>
 
+      {/* CONTENT BANK SECTION */}
+      <Card className="border-accent/20 shadow-md">
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <FileText className="w-6 h-6 text-primary" />
+              <div>
+                <CardTitle className="text-foreground">Content Bank</CardTitle>
+                <CardDescription>Pre-written captions, posts, and content for quick use</CardDescription>
+              </div>
+            </div>
+            {canEdit && (
+              <div className="flex gap-2">
+                <Button onClick={() => setIsAddContentDialogOpen(true)} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Content
+                </Button>
+                <Button onClick={openContentBank} variant="outline" className="gap-2">
+                  <Eye className="w-4 h-4" />
+                  Browse All
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {contentItems.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">No content in your bank yet</h3>
+              <p className="text-gray-500 mb-6">Add pre-written captions, posts, and content for quick access</p>
+              {canEdit && (
+                <Button onClick={() => setIsAddContentDialogOpen(true)} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Your First Content
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {contentItems.slice(0, 6).map((content) => (
+                <div
+                  key={content.id}
+                  className="p-4 border border-accent/20 rounded-lg hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => selectContent(content)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-sm text-foreground truncate">{content.title}</h4>
+                    <Badge variant="secondary" className="text-xs">
+                      {content.type}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-foreground/70 mb-3 line-clamp-3">{content.text}</p>
+                  <div className="flex items-center justify-between text-xs text-foreground/60">
+                    <span>{content.category}</span>
+                    <span>Used {content.usageCount} times</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {contentItems.length > 6 && (
+            <div className="text-center mt-6">
+              <Button onClick={openContentBank} variant="outline" className="gap-2">
+                <Eye className="w-4 h-4" />
+                View All {contentItems.length} Content Items
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* GRAPHIC TEMPLATES GALLERY */}
       <Card className="border-accent/20 shadow-md">
         <CardHeader>
@@ -945,11 +1621,24 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
                     <Button
                       size="sm"
                       variant="secondary"
+                      className="h-8 w-8 p-0 bg-white/90 hover:bg-blue-50 shadow-md text-blue-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openTemplateEditor(template);
+                      }}
+                      title="Edit with Text"
+                    >
+                      <Type className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
                       className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
                       onClick={(e) => {
                         e.stopPropagation();
                         window.open(template.imageUrl, '_blank');
                       }}
+                      title="Download"
                     >
                       <Download className="w-4 h-4" />
                     </Button>
@@ -962,6 +1651,7 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
                           e.stopPropagation();
                           handleDeleteTemplate(template.id);
                         }}
+                        title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -1070,6 +1760,17 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
                     {canEdit && (
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          {post.status === 'draft' && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handlePublishPost(post)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Publish
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
@@ -1152,14 +1853,67 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
         </CardContent>
       </Card>
 
-      {/* 7. SOCIAL MEDIA ACCOUNTS */}
+      {/* 7. SOCIAL MEDIA CONNECTIONS */}
+      <Card className="border-accent/20 shadow-md">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Share2 className="w-6 h-6 text-primary" />
+              <div>
+                <CardTitle className="text-foreground">Social Media Connections</CardTitle>
+                <CardDescription>Connect your social accounts for automated posting</CardDescription>
+              </div>
+            </div>
+            <Button onClick={openSocialConnections} variant="outline" className="gap-2">
+              <Share2 className="w-4 h-4" />
+              Manage Connections
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {socialConnections.accounts.map((account) => (
+              <div
+                key={account.id}
+                className={`p-4 border rounded-lg text-center transition-all ${
+                  account.isConnected 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                     style={{
+                       backgroundColor: account.platform === 'Facebook' ? '#1877F2' :
+                                       account.platform === 'Instagram' ? '#E4405F' :
+                                       account.platform === 'Twitter' ? '#1DA1F2' :
+                                       account.platform === 'LinkedIn' ? '#0077B5' : '#6B7280'
+                     }}>
+                  {account.platform.charAt(0)}
+                </div>
+                <h4 className="font-semibold text-sm mb-1">{account.platform}</h4>
+                <p className="text-xs text-gray-600 mb-2">{account.username}</p>
+                <Badge variant={account.isConnected ? 'default' : 'secondary'} className="text-xs">
+                  {account.isConnected ? 'Connected' : 'Not Connected'}
+                </Badge>
+                {account.lastSync && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Last sync: {account.lastSync.toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 8. SOCIAL MEDIA ACCOUNTS */}
       <Card className="border-accent/20 shadow-md">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <Share2 className="w-6 h-6 text-primary" />
+            <ExternalLink className="w-6 h-6 text-primary" />
             <div>
-              <CardTitle className="text-foreground">Social Media Accounts</CardTitle>
-              <CardDescription>Direct access to {currentProject?.name || 'your'} social platforms</CardDescription>
+              <CardTitle className="text-foreground">Quick Access to Social Platforms</CardTitle>
+              <CardDescription>Direct links to your social media accounts</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -1241,12 +1995,24 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
             </div>
 
             <div>
-              <Label htmlFor="caption">Caption</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="caption">Caption</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={openContentBank}
+                  className="gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Use Content Bank
+                </Button>
+              </div>
               <Textarea
                 id="caption"
                 value={newPost.caption}
                 onChange={(e) => setNewPost(prev => ({ ...prev, caption: e.target.value }))}
-                placeholder="Write your post caption..."
+                placeholder="Write your post caption or select from content bank..."
                 rows={4}
               />
             </div>
@@ -1322,9 +2088,9 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreatePost} disabled={!newPost.platform || !newPost.caption}>
+              <Button onClick={handleCreatePostWithOptimization} disabled={!newPost.platform || !newPost.caption}>
                 <Plus className="w-4 h-4 mr-2" />
-                Create Post
+                Create Optimized Post
               </Button>
             </div>
           </div>
@@ -1618,6 +2384,628 @@ export function SocialMedia({ user, currentProject, canEdit = true, onAddActivit
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Content Bank Dialog */}
+      <Dialog open={contentBank.isOpen} onOpenChange={(open) => setContentBank(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Content Bank - {contentItems.length} Items
+            </DialogTitle>
+            <DialogDescription>
+              Browse and select from your pre-written content library
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col h-[70vh]">
+            {/* Filters */}
+            <div className="flex gap-4 mb-6 pb-4 border-b border-accent/20">
+              <div className="flex-1">
+                <Label>Category</Label>
+                <Select 
+                  value={contentBank.filters.category} 
+                  onValueChange={(value) => filterContent({ ...contentBank.filters, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Categories</SelectItem>
+                    {CONTENT_CATEGORIES.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1">
+                <Label>Content Type</Label>
+                <Select 
+                  value={contentBank.filters.type} 
+                  onValueChange={(value) => filterContent({ ...contentBank.filters, type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Types</SelectItem>
+                    {CONTENT_TYPES.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1">
+                <Label>Platform</Label>
+                <Select 
+                  value={contentBank.filters.platform} 
+                  onValueChange={(value) => filterContent({ ...contentBank.filters, platform: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Platforms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Platforms</SelectItem>
+                    {PLATFORMS.map(platform => (
+                      <SelectItem key={platform} value={platform}>{platform}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Content List */}
+            <div className="flex-1 overflow-y-auto">
+              {isContentBankLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : contentItems.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">No content found</h3>
+                  <p className="text-gray-500 mb-6">Try adjusting your filters or add new content</p>
+                  {canEdit && (
+                    <Button onClick={() => setIsAddContentDialogOpen(true)} className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      Add Content
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {contentItems.map((content) => (
+                    <div
+                      key={content.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        contentBank.selectedContent?.id === content.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-accent/20 hover:border-primary/50 hover:shadow-md'
+                      }`}
+                      onClick={() => selectContent(content)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-foreground">{content.title}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">{content.type}</Badge>
+                            <Badge variant="outline" className="text-xs">{content.category}</Badge>
+                            {content.platform && (
+                              <Badge variant="outline" className="text-xs">{content.platform}</Badge>
+                            )}
+                            {content.tone && (
+                              <Badge variant="outline" className="text-xs">{content.tone}</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right text-sm text-foreground/60">
+                          <div>Used {content.usageCount} times</div>
+                          <div>{content.createdAt.toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      
+                      <p className="text-foreground/70 mb-3 whitespace-pre-wrap">{content.text}</p>
+                      
+                      {content.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {content.tags.map((tag, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">#{tag}</Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-foreground/60">By {content.createdBy}</span>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              useContentInPost(content);
+                            }}
+                          >
+                            Use in Post
+                          </Button>
+                          {canEdit && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // TODO: Add edit functionality
+                              }}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Content Dialog */}
+      <Dialog open={isAddContentDialogOpen} onOpenChange={setIsAddContentDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Content to Bank</DialogTitle>
+            <DialogDescription>
+              Add pre-written content for quick access when creating posts
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="content-title">Content Title *</Label>
+              <Input
+                id="content-title"
+                value={newContent.title}
+                onChange={(e) => setNewContent(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="e.g., Health Tip - Heart Health"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="content-text">Content Text *</Label>
+              <Textarea
+                id="content-text"
+                value={newContent.text}
+                onChange={(e) => setNewContent(prev => ({ ...prev, text: e.target.value }))}
+                placeholder="Enter your content here..."
+                rows={4}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="content-category">Category</Label>
+                <Select 
+                  value={newContent.category} 
+                  onValueChange={(value) => setNewContent(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger id="content-category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTENT_CATEGORIES.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="content-type">Content Type</Label>
+                <Select 
+                  value={newContent.type} 
+                  onValueChange={(value: any) => setNewContent(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger id="content-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTENT_TYPES.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="content-platform">Platform</Label>
+                <Select 
+                  value={newContent.platform} 
+                  onValueChange={(value) => setNewContent(prev => ({ ...prev, platform: value }))}
+                >
+                  <SelectTrigger id="content-platform">
+                    <SelectValue placeholder="Any platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any Platform</SelectItem>
+                    {PLATFORMS.map(platform => (
+                      <SelectItem key={platform} value={platform}>{platform}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="content-tone">Tone</Label>
+                <Select 
+                  value={newContent.tone} 
+                  onValueChange={(value) => setNewContent(prev => ({ ...prev, tone: value }))}
+                >
+                  <SelectTrigger id="content-tone">
+                    <SelectValue placeholder="Select tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTENT_TONES.map(tone => (
+                      <SelectItem key={tone} value={tone}>{tone}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="content-tags">Tags (comma-separated)</Label>
+              <Input
+                id="content-tags"
+                value={newContent.tags}
+                onChange={(e) => setNewContent(prev => ({ ...prev, tags: e.target.value }))}
+                placeholder="health, wellness, tips"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsAddContentDialogOpen(false);
+                  setNewContent({ title: '', text: '', category: '', type: 'caption', platform: '', tone: '', tags: '' });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={addContentToBank} 
+                disabled={!newContent.title || !newContent.text}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add to Bank
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template Editor Dialog */}
+      <Dialog open={templateEditor.isOpen} onOpenChange={(open) => setTemplateEditor(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Type className="w-5 h-5" />
+              Template Editor - {templateEditor.template?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Add and customize text overlays on your template. Click and drag to position text elements.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex gap-6 h-[70vh]">
+            {/* Canvas Area */}
+            <div className="flex-1 flex flex-col">
+              <div className="flex-1 bg-gray-100 rounded-lg p-4 flex items-center justify-center">
+                <canvas
+                  ref={canvasRef}
+                  width={templateEditor.canvasSize.width}
+                  height={templateEditor.canvasSize.height}
+                  className="max-w-full max-h-full border border-gray-300 rounded cursor-move"
+                  onMouseDown={handleCanvasMouseDown}
+                  onMouseMove={handleCanvasMouseMove}
+                  onMouseUp={handleCanvasMouseUp}
+                  onClick={handleCanvasClick}
+                />
+              </div>
+              
+              <div className="flex gap-2 mt-4">
+                <Button onClick={addTextOverlay} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Text
+                </Button>
+                <Button onClick={exportGeneratedImage} variant="outline" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Export Image
+                </Button>
+                <Button 
+                  onClick={() => setTemplateEditor(prev => ({ ...prev, isOpen: false }))} 
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+
+            {/* Text Properties Panel */}
+            <div className="w-80 border-l border-gray-200 pl-6">
+              <Tabs defaultValue="text" className="h-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="text">Text</TabsTrigger>
+                  <TabsTrigger value="overlays">Overlays</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="text" className="space-y-4 mt-4">
+                  {templateEditor.selectedOverlay && (() => {
+                    const selectedOverlay = templateEditor.textOverlays.find(o => o.id === templateEditor.selectedOverlay);
+                    if (!selectedOverlay) return null;
+                    
+                    return (
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Text Content</Label>
+                          <Textarea
+                            value={selectedOverlay.text}
+                            onChange={(e) => updateTextOverlay(selectedOverlay.id, { text: e.target.value })}
+                            rows={3}
+                            placeholder="Enter your text..."
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label>Font Size</Label>
+                          <div className="flex items-center gap-2">
+                            <Slider
+                              value={[selectedOverlay.fontSize]}
+                              onValueChange={([value]) => updateTextOverlay(selectedOverlay.id, { fontSize: value })}
+                              min={12}
+                              max={72}
+                              step={1}
+                              className="flex-1"
+                            />
+                            <span className="text-sm text-gray-500 w-8">{selectedOverlay.fontSize}px</span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label>Font Family</Label>
+                          <Select 
+                            value={selectedOverlay.fontFamily} 
+                            onValueChange={(value) => updateTextOverlay(selectedOverlay.id, { fontFamily: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FONT_FAMILIES.map(font => (
+                                <SelectItem key={font} value={font} style={{ fontFamily: font }}>
+                                  {font}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label>Text Color</Label>
+                          <div className="grid grid-cols-5 gap-2">
+                            {FONT_COLORS.map(color => (
+                              <button
+                                key={color}
+                                className={`w-8 h-8 rounded border-2 ${
+                                  selectedOverlay.color === color ? 'border-blue-500' : 'border-gray-300'
+                                }`}
+                                style={{ backgroundColor: color }}
+                                onClick={() => updateTextOverlay(selectedOverlay.id, { color })}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button
+                            variant={selectedOverlay.fontWeight === 'bold' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => updateTextOverlay(selectedOverlay.id, { 
+                              fontWeight: selectedOverlay.fontWeight === 'bold' ? 'normal' : 'bold' 
+                            })}
+                          >
+                            <Bold className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant={selectedOverlay.fontStyle === 'italic' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => updateTextOverlay(selectedOverlay.id, { 
+                              fontStyle: selectedOverlay.fontStyle === 'italic' ? 'normal' : 'italic' 
+                            })}
+                          >
+                            <Italic className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        <div>
+                          <Label>Text Alignment</Label>
+                          <div className="flex gap-1">
+                            <Button
+                              variant={selectedOverlay.textAlign === 'left' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => updateTextOverlay(selectedOverlay.id, { textAlign: 'left' })}
+                            >
+                              <AlignLeft className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant={selectedOverlay.textAlign === 'center' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => updateTextOverlay(selectedOverlay.id, { textAlign: 'center' })}
+                            >
+                              <AlignCenter className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant={selectedOverlay.textAlign === 'right' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => updateTextOverlay(selectedOverlay.id, { textAlign: 'right' })}
+                            >
+                              <AlignRight className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteTextOverlay(selectedOverlay.id)}
+                          className="w-full"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Text
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                  
+                  {!templateEditor.selectedOverlay && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Type className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Select a text overlay to edit its properties</p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="overlays" className="space-y-2 mt-4">
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {templateEditor.textOverlays.map((overlay, index) => (
+                      <div
+                        key={overlay.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          templateEditor.selectedOverlay === overlay.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => selectTextOverlay(overlay.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">Text {index + 1}</p>
+                            <p className="text-xs text-gray-500 truncate">{overlay.text}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteTextOverlay(overlay.id);
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {templateEditor.textOverlays.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No text overlays yet</p>
+                        <p className="text-sm">Click "Add Text" to get started</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Social Connections Dialog */}
+      <Dialog open={socialConnections.isOpen} onOpenChange={(open) => setSocialConnections(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5" />
+              Social Media Connections
+            </DialogTitle>
+            <DialogDescription>
+              Connect your social media accounts to enable automated posting and scheduling
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {socialConnections.accounts.map((account) => (
+              <div
+                key={account.id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                    style={{
+                      backgroundColor: account.platform === 'Facebook' ? '#1877F2' :
+                                      account.platform === 'Instagram' ? '#E4405F' :
+                                      account.platform === 'Twitter' ? '#1DA1F2' :
+                                      account.platform === 'LinkedIn' ? '#0077B5' : '#6B7280'
+                    }}
+                  >
+                    {account.platform.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">{account.platform}</h4>
+                    <p className="text-sm text-gray-600">{account.username}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Badge variant={account.isConnected ? 'default' : 'secondary'}>
+                    {account.isConnected ? 'Connected' : 'Not Connected'}
+                  </Badge>
+                  
+                  {account.isConnected ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => disconnectSocialAccount(account.platform)}
+                    >
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => connectSocialAccount(account.platform)}
+                      disabled={socialConnections.isConnecting}
+                    >
+                      {socialConnections.isConnecting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Connecting...
+                        </>
+                      ) : (
+                        'Connect'
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 mb-2">🚀 Coming Soon Features:</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Automatic posting to connected accounts</li>
+                <li>• Cross-platform content optimization</li>
+                <li>• Analytics and performance tracking</li>
+                <li>• Bulk posting and scheduling</li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

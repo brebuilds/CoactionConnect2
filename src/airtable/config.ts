@@ -18,7 +18,8 @@ export const TABLE_NAMES = {
   fonts: 'Fonts',
   knowledgeFiles: 'Knowledge Files',
   socialPosts: 'Social Posts',
-  graphicTemplates: 'Graphic Templates'
+  graphicTemplates: 'Graphic Templates',
+  contentBank: 'Content Bank'
 };
 
 // Project IDs that match your ProjectManager

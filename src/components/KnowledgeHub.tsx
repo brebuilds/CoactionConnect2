@@ -45,6 +45,9 @@ interface FileRecord {
   fileSize: string;
   uploadedBy: string;
   notes?: string;
+  category?: string;
+  tags?: string[];
+  url?: string;
 }
 
 export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKnowledge = true, canComment = true, onAddActivity }: KnowledgeHubProps) {
@@ -54,7 +57,8 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [newFiles, setNewFiles] = useState({
     files: [] as File[],
-    notes: ''
+    notes: '',
+    category: ''
   });
 
   // Project-specific categories
@@ -90,7 +94,8 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
             tags: f.tags || [],
             fileType: f.file_type,
             fileSize: f.file_size,
-            uploadedBy: f.uploaded_by
+            uploadedBy: f.uploaded_by,
+            url: f.url
           }));
           if (mapped.length) {
             setFiles(mapped);
@@ -157,7 +162,7 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
         if (currentProject) {
           id = await KnowledgeService.uploadFile(file, currentProject.id, {
             file_name: fileName,
-            category: 'General', // Default category
+            category: newFiles.category,
             tags: [],
             file_type: fileType,
             file_size: fileSize,
@@ -178,14 +183,15 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
         fileType,
         fileSize,
         uploadedBy: user.name,
-        notes: newFiles.notes || undefined
+        notes: newFiles.notes || undefined,
+        category: newFiles.category
       };
 
       uploadedFiles.push(record);
     }
 
     setFiles(prev => [...uploadedFiles, ...prev]);
-    setNewFiles({ files: [], notes: '' });
+    setNewFiles({ files: [], notes: '', category: '' });
     setIsUploadDialogOpen(false);
 
     if (onAddActivity) {
@@ -309,6 +315,21 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                   )}
                 </div>
                 <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select value={newFiles.category} onValueChange={(value) => setNewFiles(prev => ({ ...prev, category: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="notes">Notes (optional)</Label>
                   <Textarea
                     id="notes"
@@ -322,7 +343,10 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                   <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleFileUpload} disabled={newFiles.files.length === 0}>
+                  <Button 
+                    onClick={handleFileUpload} 
+                    disabled={newFiles.files.length === 0 || !newFiles.category}
+                  >
                     Upload {newFiles.files.length} File{newFiles.files.length !== 1 ? 's' : ''}
                   </Button>
                 </div>
@@ -496,6 +520,7 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
             <TableHeader>
               <TableRow>
                 <TableHead>File Name</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Notes</TableHead>
                 <TableHead>Last Modified</TableHead>
                 <TableHead>Size</TableHead>
@@ -516,6 +541,11 @@ export function KnowledgeHub({ user, currentProject, canEdit = true, canUploadKn
                           <div className="text-sm text-gray-500">{file.fileType}</div>
                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {file.category || 'Uncategorized'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="max-w-xs">

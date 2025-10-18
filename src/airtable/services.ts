@@ -191,8 +191,11 @@ export const FontService = {
         'Usage': font.usage,
         'Family': font.family,
         'File': font.url ? [{ url: font.url }] : undefined,
+        'File Name': font.file_name,
+        'File Size': font.file_size,
         'Project': [projectId], // Link to Projects table
-        'Uploaded By': font.uploadedBy
+        'Uploaded By': font.uploadedBy,
+        'Upload Date': new Date().toISOString()
       }
     };
 
@@ -326,6 +329,81 @@ export const SocialService = {
 
   deletePost: async (postId: string): Promise<void> => {
     await airtableRequest(TABLE_NAMES.socialPosts, 'DELETE');
+  }
+};
+
+// Content Bank Management
+export const ContentBankService = {
+  // Save content to Airtable
+  saveContent: async (content: any, projectId: string): Promise<string> => {
+    const record = {
+      fields: {
+        'Content Title': content.title,
+        'Content Text': content.text,
+        'Category': content.category,
+        'Tags': content.tags?.join(', ') || '',
+        'Content Type': content.type, // 'caption', 'post', 'hashtag', 'quote'
+        'Platform': content.platform || '',
+        'Tone': content.tone || '',
+        'Project': [projectId],
+        'Created By': content.createdBy,
+        'Created Date': new Date().toISOString(),
+        'Usage Count': 0,
+        'Is Active': true
+      }
+    };
+
+    const result = await airtableRequest(TABLE_NAMES.contentBank, 'POST', { records: [record] });
+    return result.records[0].id;
+  },
+
+  // Get content for a project
+  getContent: async (projectId: string, filters?: { category?: string; type?: string; platform?: string }): Promise<any[]> => {
+    const result = await airtableRequest(TABLE_NAMES.contentBank, 'GET');
+
+    return result.records
+      .filter((record: any) => {
+        const linkedProjects = record.fields.Project || [];
+        const matchesProject = linkedProjects.includes(projectId);
+        const matchesCategory = !filters?.category || record.fields.Category === filters.category;
+        const matchesType = !filters?.type || record.fields['Content Type'] === filters.type;
+        const matchesPlatform = !filters?.platform || record.fields.Platform === filters.platform;
+        const isActive = record.fields['Is Active'] !== false;
+        
+        return matchesProject && matchesCategory && matchesType && matchesPlatform && isActive;
+      })
+      .map((record: any) => ({
+        id: record.id,
+        title: record.fields['Content Title'],
+        text: record.fields['Content Text'],
+        category: record.fields.Category,
+        tags: record.fields.Tags ? record.fields.Tags.split(', ') : [],
+        type: record.fields['Content Type'],
+        platform: record.fields.Platform,
+        tone: record.fields.Tone,
+        usageCount: record.fields['Usage Count'] || 0,
+        createdBy: record.fields['Created By'],
+        createdAt: new Date(record.fields['Created Date'])
+      }));
+  },
+
+  // Update content usage
+  updateUsage: async (contentId: string): Promise<void> => {
+    const record = {
+      records: [{
+        id: contentId,
+        fields: {
+          'Usage Count': '+1' // Increment usage count
+        }
+      }]
+    };
+
+    await airtableRequest(TABLE_NAMES.contentBank, 'PATCH', record);
+  },
+
+  // Delete content
+  deleteContent: async (contentId: string): Promise<void> => {
+    await airtableRequest(`${TABLE_NAMES.contentBank}/${contentId}`, 'DELETE');
   }
 };
 

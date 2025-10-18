@@ -381,7 +381,7 @@ export default function App() {
       case 'community':
         return <Community user={user} currentProject={currentProject} canEdit={canEdit} canComment={canComment} canSendMessages={canSendMessages} />;
       case 'insights':
-        return <Insights user={user} currentProject={currentProject} canEdit={canEdit} />;
+        return <Insights user={user} currentProject={currentProject} />;
       case 'settings':
         return <Settings user={user} currentProject={currentProject} canEdit={canEdit} />;
       default:
