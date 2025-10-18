@@ -20,7 +20,9 @@ import {
   X,
   Pencil,
   Settings,
-  FileText
+  FileText,
+  ZoomIn,
+  Eye
 } from 'lucide-react';
 import { User } from '../App';
 import { Project } from './ProjectManager';
@@ -128,6 +130,17 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     category: '',
     description: '',
     file: null as File | null
+  });
+
+  // Preview dialog state
+  const [previewDialog, setPreviewDialog] = useState<{
+    isOpen: boolean;
+    type: 'logo' | 'color' | 'font' | 'template';
+    item: any;
+  }>({
+    isOpen: false,
+    type: 'logo',
+    item: null
   });
 
   // Initialize brand settings from current project
@@ -429,6 +442,23 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Preview handlers
+  const openPreview = (type: 'logo' | 'color' | 'font' | 'template', item: any) => {
+    setPreviewDialog({
+      isOpen: true,
+      type,
+      item
+    });
+  };
+
+  const closePreview = () => {
+    setPreviewDialog({
+      isOpen: false,
+      type: 'logo',
+      item: null
+    });
   };
 
   const handleLogoUpload = async () => {
@@ -1053,7 +1083,10 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
             {logos.map((logoItem, index) => (
               <Card key={logoItem.id} className="border-accent/20 shadow-sm hover:shadow-md transition-shadow bg-background">
                 <CardContent className="p-6">
-                  <div className="w-full h-32 bg-secondary/50 rounded-lg flex items-center justify-center mb-4 border border-accent/20">
+                  <div 
+                    className="w-full h-32 bg-secondary/50 rounded-lg flex items-center justify-center mb-4 border border-accent/20 cursor-pointer hover:bg-secondary/70 transition-colors"
+                    onClick={() => openPreview('logo', logoItem)}
+                  >
                     <img src={logoItem.asset} alt={logoItem.name} className="max-h-20 max-w-full object-contain" />
                   </div>
                   <div className="space-y-2">
@@ -1125,14 +1158,25 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                     )}
                     <p className="text-xs text-foreground/40">{logoItem.size}</p>
                     <p className="text-xs text-foreground/40">Uploaded by {logoItem.uploadedBy}</p>
-                    <Button 
-                      size="sm" 
-                      className="w-full bg-primary hover:bg-primary/90"
-                      onClick={() => handleDownloadAsset(logoItem)}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => openPreview('logo', logoItem)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Preview
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                        onClick={() => handleDownloadAsset(logoItem)}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1213,8 +1257,9 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
               <Card key={color.id} className="border-accent/20 shadow-sm bg-background">
                 <CardContent className="p-6">
                   <div 
-                    className="w-full h-24 rounded-lg mb-4 shadow-inner border border-foreground/10"
+                    className="w-full h-24 rounded-lg mb-4 shadow-inner border border-foreground/10 cursor-pointer hover:scale-105 transition-transform"
                     style={{ backgroundColor: color.hex }}
+                    onClick={() => openPreview('color', color)}
                   />
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -1301,15 +1346,26 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                     {color.pantone && (
                       <p className="text-xs text-foreground/40">Pantone: {color.pantone}</p>
                     )}
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="w-full mt-3"
-                      onClick={() => handleDownloadColor(color)}
-                    >
-                      <Download className="w-3 h-3 mr-2" />
-                      Download Color
-                    </Button>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => openPreview('color', color)}
+                      >
+                        <Eye className="w-3 h-3 mr-2" />
+                        Preview
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleDownloadColor(color)}
+                      >
+                        <Download className="w-3 h-3 mr-2" />
+                        Download
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1421,7 +1477,10 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                             )}
                           </div>
                           {/* Font Preview */}
-                          <div className="p-3 bg-accent/10 rounded-lg">
+                          <div 
+                            className="p-3 bg-accent/10 rounded-lg cursor-pointer hover:bg-accent/20 transition-colors"
+                            onClick={() => openPreview('font', font)}
+                          >
                             <p className="text-sm text-foreground/80 mb-1">Preview:</p>
                             <p 
                               className="text-lg font-medium" 
@@ -1533,21 +1592,32 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                         </div>
                         <div className="flex items-center justify-between text-xs text-foreground/40 mt-1">
                           <span>Uploaded by {font.uploadedBy}</span>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => {
-                              // Create download link for font file
-                              const link = document.createElement('a');
-                              link.href = font.fontFile!;
-                              link.download = font.fileName || `${font.name}.font`;
-                              link.click();
-                            }}
-                          >
-                            <Download className="w-3 h-3 mr-1" />
-                            Download
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => openPreview('font', font)}
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              Preview
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => {
+                                // Create download link for font file
+                                const link = document.createElement('a');
+                                link.href = font.fontFile!;
+                                link.download = font.fileName || `${font.name}.font`;
+                                link.click();
+                              }}
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1688,7 +1758,10 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                       )}
                     </div>
 
-                    <div className="aspect-video bg-secondary/30 rounded-lg flex items-center justify-center">
+                    <div 
+                      className="aspect-video bg-secondary/30 rounded-lg flex items-center justify-center cursor-pointer hover:bg-secondary/50 transition-colors"
+                      onClick={() => openPreview('template', template)}
+                    >
                       {template.asset ? (
                         <img 
                           src={template.asset} 
@@ -1709,21 +1782,32 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-accent/20">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = template.asset;
-                          link.download = template.name;
-                          link.target = '_blank';
-                          link.click();
-                        }}
-                        className="flex-1"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
+                      <div className="flex gap-2 w-full">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => openPreview('template', template)}
+                          className="flex-1"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = template.asset;
+                            link.download = template.name;
+                            link.target = '_blank';
+                            link.click();
+                          }}
+                          className="flex-1"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1751,6 +1835,131 @@ export function BrandingAssets({ user, currentProject, canEdit = true, canManage
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewDialog.isOpen} onOpenChange={closePreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              {previewDialog.type === 'logo' && 'Logo Preview'}
+              {previewDialog.type === 'color' && 'Color Preview'}
+              {previewDialog.type === 'font' && 'Font Preview'}
+              {previewDialog.type === 'template' && 'Template Preview'}
+            </DialogTitle>
+            <DialogDescription>
+              {previewDialog.item?.name || 'Preview'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {previewDialog.type === 'logo' && previewDialog.item && (
+              <div className="space-y-4">
+                <div className="bg-secondary/20 rounded-lg p-8 flex items-center justify-center min-h-[300px]">
+                  <img 
+                    src={previewDialog.item.asset} 
+                    alt={previewDialog.item.name}
+                    className="max-w-full max-h-[400px] object-contain"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Name:</span> {previewDialog.item.name}
+                  </div>
+                  <div>
+                    <span className="font-medium">Format:</span> {previewDialog.item.format}
+                  </div>
+                  <div>
+                    <span className="font-medium">Type:</span> {previewDialog.item.type}
+                  </div>
+                  <div>
+                    <span className="font-medium">Size:</span> {previewDialog.item.size}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {previewDialog.type === 'color' && previewDialog.item && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-24 h-24 rounded-lg border-2 border-accent/20 shadow-lg"
+                    style={{ backgroundColor: previewDialog.item.hex }}
+                  />
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">{previewDialog.item.name}</h3>
+                    <div className="text-2xl font-mono font-bold">{previewDialog.item.hex}</div>
+                    {previewDialog.item.pantone && (
+                      <div className="text-sm text-foreground/70">Pantone: {previewDialog.item.pantone}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-secondary/20 rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Usage Guidelines:</h4>
+                  <p className="text-sm text-foreground/80">{previewDialog.item.usage}</p>
+                </div>
+              </div>
+            )}
+
+            {previewDialog.type === 'font' && previewDialog.item && (
+              <div className="space-y-4">
+                <div className="bg-secondary/20 rounded-lg p-8">
+                  <div 
+                    className="text-4xl font-bold text-center"
+                    style={{ 
+                      fontFamily: previewDialog.item.family,
+                      fontWeight: previewDialog.item.weight?.includes('Bold') ? 'bold' : 'normal'
+                    }}
+                  >
+                    {previewDialog.item.name}
+                  </div>
+                  <div className="text-center mt-4 text-sm text-foreground/70">
+                    The quick brown fox jumps over the lazy dog
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Family:</span> {previewDialog.item.family}
+                  </div>
+                  <div>
+                    <span className="font-medium">Weight:</span> {previewDialog.item.weight}
+                  </div>
+                  <div>
+                    <span className="font-medium">Usage:</span> {previewDialog.item.usage}
+                  </div>
+                  <div>
+                    <span className="font-medium">File:</span> {previewDialog.item.fileName}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {previewDialog.type === 'template' && previewDialog.item && (
+              <div className="space-y-4">
+                <div className="bg-secondary/20 rounded-lg p-8 flex items-center justify-center min-h-[400px]">
+                  {previewDialog.item.asset ? (
+                    <img 
+                      src={previewDialog.item.asset} 
+                      alt={previewDialog.item.name}
+                      className="max-w-full max-h-[500px] object-contain"
+                    />
+                  ) : (
+                    <FileText className="w-16 h-16 text-foreground/40" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <span className="font-medium">Category:</span> {previewDialog.item.category}
+                  </div>
+                  <div>
+                    <span className="font-medium">Description:</span> {previewDialog.item.description}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
