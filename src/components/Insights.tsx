@@ -144,100 +144,12 @@ export function Insights({ user, currentProject }: InsightsProps) {
         // For now, we'll simulate loading data
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Simulate real analytics data based on current project
-        const mockAnalytics: SocialMediaAnalytics[] = [
-          {
-            platform: 'Instagram',
-            followers: 12450,
-            engagement: 6.8,
-            reach: 25600,
-            posts: 24,
-            growth30d: 12.3,
-            topPost: {
-              content: 'Community health tips that everyone should know! 💙',
-              engagement: 8.2,
-              date: '2024-01-15'
-            }
-          },
-          {
-            platform: 'Facebook',
-            followers: 8920,
-            engagement: 4.2,
-            reach: 18400,
-            posts: 18,
-            growth30d: 8.5,
-            topPost: {
-              content: 'Thank you to our amazing healthcare team!',
-              engagement: 5.1,
-              date: '2024-01-12'
-            }
-          },
-          {
-            platform: 'LinkedIn',
-            followers: 5640,
-            engagement: 5.9,
-            reach: 12800,
-            posts: 12,
-            growth30d: 15.7,
-            topPost: {
-              content: 'Professional insights on healthcare trends',
-              engagement: 7.3,
-              date: '2024-01-10'
-            }
-          },
-          {
-            platform: 'Twitter',
-            followers: 3280,
-            engagement: 3.1,
-            reach: 8900,
-            posts: 15,
-            growth30d: 5.2,
-            topPost: {
-              content: 'Quick health tip: Stay hydrated! 💧',
-              engagement: 4.5,
-              date: '2024-01-08'
-            }
-          }
-        ];
+        // Show placeholder data instead of fake analytics
+        const placeholderAnalytics: SocialMediaAnalytics[] = [];
+        const placeholderPostPerformance: PostPerformance[] = [];
 
-        const mockPostPerformance: PostPerformance[] = [
-          {
-            id: '1',
-            platform: 'Instagram',
-            content: 'Community health tips that everyone should know! 💙',
-            engagement: 8.2,
-            reach: 3200,
-            likes: 245,
-            comments: 18,
-            shares: 12,
-            date: '2024-01-15'
-          },
-          {
-            id: '2',
-            platform: 'LinkedIn',
-            content: 'Professional insights on healthcare trends',
-            engagement: 7.3,
-            reach: 2100,
-            likes: 89,
-            comments: 15,
-            shares: 8,
-            date: '2024-01-10'
-          },
-          {
-            id: '3',
-            platform: 'Facebook',
-            content: 'Thank you to our amazing healthcare team!',
-            engagement: 5.1,
-            reach: 1800,
-            likes: 156,
-            comments: 22,
-            shares: 6,
-            date: '2024-01-12'
-          }
-        ];
-
-        setSocialAnalytics(mockAnalytics);
-        setPostPerformance(mockPostPerformance);
+        setSocialAnalytics(placeholderAnalytics);
+        setPostPerformance(placeholderPostPerformance);
       } catch (error) {
         console.error('Error loading social analytics:', error);
       } finally {

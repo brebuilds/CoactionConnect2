@@ -279,21 +279,23 @@ export const KnowledgeService = {
 export const SocialService = {
   savePost: async (post: any, projectId: string): Promise<string> => {
     const record = {
-      fields: {
-        'Content': post.content,
-        'Platforms': post.platforms,
-        'Status': post.status,
-        'Scheduled Date': post.scheduledDate,
-        'Publish Date': post.publishDate,
-        'Created By': post.createdBy,
-        'Approved By': post.approvedBy,
-        'Project': [projectId], // Link to Projects table
-        'Created': new Date().toISOString()
-      }
+      records: [{
+        fields: {
+          'Content': post.content,
+          'Platforms': post.platforms,
+          'Status': post.status,
+          'Scheduled Date': post.scheduledDate,
+          'Publish Date': post.publishDate,
+          'Created By': post.createdBy,
+          'Approved By': post.approvedBy,
+          'Project': [projectId], // Link to Projects table
+          'Created': new Date().toISOString()
+        }
+      }]
     };
 
     const result = await airtableRequest(TABLE_NAMES.socialPosts, 'POST', record);
-    return result.id;
+    return result.records[0].id;
   },
 
   getPosts: async (projectId: string, status?: string): Promise<any[]> => {
@@ -321,14 +323,31 @@ export const SocialService = {
 
   updatePost: async (postId: string, updates: any): Promise<void> => {
     const record = {
-      fields: updates
+      records: [{
+        id: postId,
+        fields: updates
+      }]
     };
     
     await airtableRequest(TABLE_NAMES.socialPosts, 'PATCH', record);
   },
 
   deletePost: async (postId: string): Promise<void> => {
-    await airtableRequest(TABLE_NAMES.socialPosts, 'DELETE');
+    const url = `${AIRTABLE_BASE_URL}/${AIRTABLE_BASE_ID}/${TABLE_NAMES.socialPosts}/${postId}`;
+    
+    const options: RequestInit = {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      throw new Error(`Airtable API error: ${response.statusText}`);
+    }
   }
 };
 

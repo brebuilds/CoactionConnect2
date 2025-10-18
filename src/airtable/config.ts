@@ -13,12 +13,11 @@ export const AIRTABLE_BASE_URL = 'https://api.airtable.com/v0';
 // Table names in your single Airtable base
 export const TABLE_NAMES = {
   projects: 'Projects',
-  logos: 'Logos',
-  colors: 'Colors',
-  fonts: 'Fonts',
-  knowledgeFiles: 'Knowledge Files',
   socialPosts: 'Social Posts',
   graphicTemplates: 'Graphic Templates',
+  analytics: 'Analytics',
+  teamMembers: 'Team Members',
+  // Note: Content Bank is restricted (403) on Free plan
   contentBank: 'Content Bank'
 };
 

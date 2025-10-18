@@ -179,26 +179,14 @@ export function Website({ user, currentProject }: WebsiteProps) {
       // Simulate loading analytics data
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock analytics data based on project
-      const mockAnalytics: WebsiteAnalytics = {
-        visitors: currentProject?.id === 'zrmc' ? 12450 : currentProject?.id === 'tgmc' ? 8920 : 15680,
-        pageViews: currentProject?.id === 'zrmc' ? 36800 : currentProject?.id === 'tgmc' ? 28400 : 45600,
-        bounceRate: 32.5,
-        avgSessionDuration: '2:45',
-        topPages: [
-          { page: 'Homepage', views: 12400, percentage: 33.7 },
-          { page: 'Services', views: 8900, percentage: 24.2 },
-          { page: 'About Us', views: 6700, percentage: 18.2 },
-          { page: 'Contact', views: 4200, percentage: 11.4 },
-          { page: 'News', views: 4600, percentage: 12.5 }
-        ],
-        trafficSources: [
-          { source: 'Direct', visitors: 4200, percentage: 33.7 },
-          { source: 'Google Search', visitors: 3800, percentage: 30.5 },
-          { source: 'Social Media', visitors: 2100, percentage: 16.9 },
-          { source: 'Referrals', visitors: 1500, percentage: 12.0 },
-          { source: 'Email', visitors: 850, percentage: 6.9 }
-        ]
+      // Show placeholder analytics data
+      const placeholderAnalytics: WebsiteAnalytics = {
+        visitors: 0,
+        pageViews: 0,
+        bounceRate: 0,
+        avgSessionDuration: '--',
+        topPages: [],
+        trafficSources: []
       };
 
       // Mock email subscribers data

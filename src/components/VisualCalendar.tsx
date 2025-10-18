@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  Search
+  Search,
+  X
 } from 'lucide-react';
 
 interface CalendarPost {
@@ -51,7 +52,8 @@ interface VisualCalendarProps {
 export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, canEdit }: VisualCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [selectedPost, setSelectedPost] = useState<CalendarPost | null>(null);
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
   const [filterPlatform, setFilterPlatform] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -139,6 +141,24 @@ export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, c
     setIsCreateDialogOpen(false);
   };
 
+  // Get platform icon
+  const getPlatformIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'facebook':
+        return '📘';
+      case 'instagram':
+        return '📷';
+      case 'twitter':
+        return '🐦';
+      case 'linkedin':
+        return '💼';
+      case 'tiktok':
+        return '🎵';
+      default:
+        return '📱';
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'published': return 'bg-green-100 text-green-800 border-green-200';
@@ -149,16 +169,6 @@ export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, c
     }
   };
 
-  const getPlatformIcon = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case 'instagram': return '📷';
-      case 'facebook': return '📘';
-      case 'twitter': return '🐦';
-      case 'linkedin': return '💼';
-      case 'tiktok': return '🎵';
-      default: return '📱';
-    }
-  };
 
   const dates = viewMode === 'week' ? getWeekDates(currentDate) : getMonthDates(currentDate);
   const filteredPosts = getFilteredPosts();
@@ -341,114 +351,219 @@ export function VisualCalendar({ posts, onAddPost, onUpdatePost, onDeletePost, c
 
       {/* Calendar Grid */}
       <Card className="border-accent/20">
-        <CardContent className="p-6">
+        <CardContent className="p-0">
           {viewMode === 'week' ? (
-            <div className="grid grid-cols-7 gap-4">
-              {dates.map((date, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-foreground/70">
+            <div className="calendar-week-view">
+              {/* Week Header */}
+              <div className="grid grid-cols-7 border-b border-gray-200">
+                {dates.map((date, index) => (
+                  <div key={index} className="p-4 text-center border-r border-gray-200 last:border-r-0">
+                    <div className="text-sm font-medium text-gray-600 mb-1">
                       {date.toLocaleDateString('en-US', { weekday: 'short' })}
                     </div>
-                    <div className="text-lg font-bold text-foreground">
+                    <div className="text-lg font-bold text-gray-900">
                       {date.getDate()}
                     </div>
                   </div>
-                  <div className="space-y-2 min-h-[200px]">
-                    {getPostsForDate(date).map((post) => (
-                      <div
-                        key={post.id}
-                        className={`p-2 rounded-lg border text-xs ${getStatusColor(post.status)} cursor-pointer hover:shadow-sm transition-shadow`}
-                        onClick={() => setSelectedDate(date)}
-                      >
-                        <div className="flex items-center gap-1 mb-1">
-                          <span>{getPlatformIcon(post.platform)}</span>
-                          <span className="font-medium truncate">{post.title}</span>
-                        </div>
-                        <div className="text-xs opacity-75 truncate">
-                          {post.content.substring(0, 50)}...
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {post.status}
-                          </Badge>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-4 w-4 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onUpdatePost(post.id, { status: 'published' });
-                              }}
-                            >
-                              <CheckCircle className="w-3 h-3" />
-                            </Button>
-                            {canEdit && (
+                ))}
+              </div>
+              
+              {/* Week Calendar Body */}
+              <div className="grid grid-cols-7 min-h-[400px]">
+                {dates.map((date, index) => (
+                  <div 
+                    key={index} 
+                    className="border-r border-gray-200 last:border-r-0 p-2 min-h-[400px] bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="space-y-2">
+                      {getPostsForDate(date).map((post) => (
+                        <div
+                          key={post.id}
+                          className={`p-2 rounded-lg border text-xs ${getStatusColor(post.status)} cursor-pointer hover:shadow-sm transition-shadow`}
+                          onClick={() => setSelectedDate(date)}
+                        >
+                          <div className="flex items-center gap-1 mb-1">
+                            <span>{getPlatformIcon(post.platform)}</span>
+                            <span className="font-medium truncate">{post.title}</span>
+                          </div>
+                          <div className="text-xs opacity-75 truncate">
+                            {post.content.substring(0, 50)}...
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {post.status}
+                            </Badge>
+                            <div className="flex items-center gap-1">
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="h-4 w-4 p-0"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onDeletePost(post.id);
+                                  onUpdatePost(post.id, { status: 'published' });
                                 }}
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <CheckCircle className="w-3 h-3" />
                               </Button>
-                            )}
+                              {canEdit && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-4 w-4 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeletePost(post.id);
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-2">
-              {/* Month view header */}
-              <div className="col-span-7 grid grid-cols-7 gap-2 mb-4">
+            <div className="calendar-month-view">
+              {/* Month Header */}
+              <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <div key={day} className="text-center text-sm font-medium text-foreground/70 py-2">
-                    {day}
+                  <div key={day} className="p-4 text-center border-r border-gray-200 last:border-r-0">
+                    <div className="text-sm font-medium text-gray-600">{day}</div>
                   </div>
                 ))}
               </div>
               
-              {/* Month view dates */}
-              {dates.map((date, index) => (
-                <div
-                  key={index}
-                  className={`min-h-[100px] p-2 border rounded-lg ${
-                    date.getMonth() === currentDate.getMonth() 
-                      ? 'bg-background' 
-                      : 'bg-secondary/30'
-                  }`}
-                >
-                  <div className="text-sm font-medium mb-2">{date.getDate()}</div>
-                  <div className="space-y-1">
-                    {getPostsForDate(date).slice(0, 2).map((post) => (
-                      <div
-                        key={post.id}
-                        className={`p-1 rounded text-xs ${getStatusColor(post.status)} truncate`}
-                      >
-                        <span className="mr-1">{getPlatformIcon(post.platform)}</span>
-                        {post.title}
+              {/* Month Calendar Body */}
+              <div className="grid grid-cols-7">
+                {dates.map((date, index) => (
+                  <div
+                    key={index}
+                    className={`min-h-[120px] p-2 border-r border-b border-gray-200 last:border-r-0 ${
+                      date.getMonth() === currentDate.getMonth() 
+                        ? 'bg-white hover:bg-gray-50' 
+                        : 'bg-gray-50 text-gray-400'
+                    } transition-colors`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`text-sm font-medium ${
+                        date.getMonth() === currentDate.getMonth() 
+                          ? 'text-gray-900' 
+                          : 'text-gray-400'
+                      }`}>
+                        {date.getDate()}
                       </div>
-                    ))}
-                    {getPostsForDate(date).length > 2 && (
-                      <div className="text-xs text-foreground/60">
-                        +{getPostsForDate(date).length - 2} more
-                      </div>
-                    )}
+                      {date.getDate() === new Date().getDate() && 
+                       date.getMonth() === new Date().getMonth() && 
+                       date.getFullYear() === new Date().getFullYear() && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-1">
+                      {getPostsForDate(date).slice(0, 3).map((post) => (
+                        <div
+                          key={post.id}
+                          className={`p-1 rounded text-xs ${getStatusColor(post.status)} truncate cursor-pointer hover:shadow-sm transition-shadow`}
+                          title={`${post.title} - ${post.content.substring(0, 100)}`}
+                          onClick={() => setSelectedPost(post)}
+                        >
+                          <span className="mr-1">{getPlatformIcon(post.platform)}</span>
+                          {post.title}
+                        </div>
+                      ))}
+                      {getPostsForDate(date).length > 3 && (
+                        <div className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                          +{getPostsForDate(date).length - 3} more
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Post Preview Popup */}
+      {selectedPost && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => setSelectedPost(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="space-y-4">
+              {/* Platform Icons */}
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{getPlatformIcon(selectedPost.platform)}</span>
+                <span className="text-sm text-gray-600">{selectedPost.platform}</span>
+              </div>
+              
+              {/* Date and Time */}
+              <div className="text-sm text-gray-600">
+                {selectedPost.scheduledDate.toLocaleDateString()} @ {selectedPost.scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              
+              {/* Post Content */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <FileText className="w-4 h-4" />
+                  <span>Content</span>
+                </div>
+                <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded">
+                  {selectedPost.content}
+                </p>
+              </div>
+              
+              {/* Graphic Preview */}
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">Graphic Preview</div>
+                <div className="w-full h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
+                  {selectedPost.imageUrl ? (
+                    <img 
+                      src={selectedPost.imageUrl} 
+                      alt="Post graphic" 
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-sm">(GRAPHIC PREVIEW)</span>
+                  )}
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex gap-2 pt-4">
+                <Button
+                  size="sm"
+                  onClick={() => onUpdatePost(selectedPost.id, { status: 'published' })}
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Publish Now
+                </Button>
+                {canEdit && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onDeletePost(selectedPost.id)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Posts List View */}
       <Card className="border-accent/20">
