@@ -37,8 +37,9 @@ import {
 } from 'lucide-react';
 import { User } from '../App';
 import { Project } from './ProjectManager';
-import exampleImage1 from 'figma:asset/1d7d98b877bb8b9b75bbb67c4d8b8ddbc03b2b29.png';
-import exampleImage2 from 'figma:asset/474136808ccf4c364621067d93c828350a78519f.png';
+// Placeholder images - replace with actual assets
+const exampleImage1 = 'https://via.placeholder.com/400x300';
+const exampleImage2 = 'https://via.placeholder.com/400x300';
 
 interface CommunityProps {
   user: User;
@@ -329,8 +330,6 @@ export function Community({ user, currentProject }: CommunityProps) {
     }
   };
 
-  const [posts, setPosts] = useState<CommunityPost[]>(getProjectSamplePosts(currentProject));
-
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [newPost, setNewPost] = useState({
     author: '',
@@ -343,7 +342,7 @@ export function Community({ user, currentProject }: CommunityProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
 
-  const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+  const isAdmin = user.role === 'SuperAdmin';
   
   // Initialize project-specific posts when project changes
   React.useEffect(() => {
@@ -652,9 +651,10 @@ export function Community({ user, currentProject }: CommunityProps) {
           </Button>
         </div>
       </div>
-        
-        {isAdmin && (
-          <Dialog open={isAddingPost} onOpenChange={setIsAddingPost}>
+
+      {/* Add Post Section */}
+      {isAdmin && (
+        <Dialog open={isAddingPost} onOpenChange={setIsAddingPost}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Plus className="w-4 h-4 mr-2" />
@@ -776,8 +776,7 @@ export function Community({ user, currentProject }: CommunityProps) {
               </div>
             </DialogContent>
           </Dialog>
-        )}
-      </div>
+      )}
 
       {/* Community Posts */}
       <div className="space-y-6">
