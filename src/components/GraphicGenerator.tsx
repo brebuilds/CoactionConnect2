@@ -83,6 +83,17 @@ export function GraphicGenerator({ user, currentProject, canEdit = true }: Graph
   const [resizeHandle, setResizeHandle] = useState<string | null>(null);
   const [templateSearchTerm, setTemplateSearchTerm] = useState('');
   const [templateCategoryFilter, setTemplateCategoryFilter] = useState('All');
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState('png');
+  const [exportQuality, setExportQuality] = useState(100);
+  const [showTextTools, setShowTextTools] = useState(false);
+  const [showShapeTools, setShowShapeTools] = useState(false);
+  const [showImageTools, setShowImageTools] = useState(false);
+  const [showLayerPanel, setShowLayerPanel] = useState(false);
+  const [shapes, setShapes] = useState<any[]>([]);
+  const [images, setImages] = useState<any[]>([]);
+  const [layers, setLayers] = useState<any[]>([]);
 
   // Brand colors and fonts from current project
   const brandColors = currentProject?.colors || {
@@ -499,8 +510,61 @@ export function GraphicGenerator({ user, currentProject, canEdit = true }: Graph
           </Card>
         </div>
 
-        {/* Tools Panel */}
+        {/* Enhanced Tools Panel */}
         <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card className="border-accent/20">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTemplateDialog(true)}
+                  disabled={!selectedTemplate}
+                >
+                  <ImageIcon className="w-4 h-4 mr-1" />
+                  Templates
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowExportDialog(true)}
+                  disabled={!selectedTemplate}
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Export
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLayerPanel(!showLayerPanel)}
+                >
+                  <Layers className="w-4 h-4 mr-1" />
+                  Layers
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Save to database functionality
+                    console.log('Saving to database...');
+                  }}
+                >
+                  <Save className="w-4 h-4 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Text Tools */}
           <Card className="border-accent/20">
             <CardHeader>
@@ -510,14 +574,23 @@ export function GraphicGenerator({ user, currentProject, canEdit = true }: Graph
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
-                onClick={addTextElement}
-                className="w-full"
-                disabled={!selectedTemplate}
-              >
-                <Text className="w-4 h-4 mr-2" />
-                Add Text
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={addTextElement}
+                  className="w-full"
+                  disabled={!selectedTemplate}
+                >
+                  <Text className="w-4 h-4 mr-2" />
+                  Add Text
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowTextTools(!showTextTools)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Format
+                </Button>
+              </div>
               
               {textElements.length > 0 && (
                 <div className="space-y-2">
@@ -698,6 +771,211 @@ export function GraphicGenerator({ user, currentProject, canEdit = true }: Graph
                 >
                   <X className="w-4 h-4 mr-2" />
                   Delete Text
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Shape Tools */}
+          <Card className="border-accent/20">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Square className="w-4 h-4" />
+                Shape Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Add rectangle shape
+                    console.log('Adding rectangle...');
+                  }}
+                  disabled={!selectedTemplate}
+                >
+                  <Square className="w-4 h-4 mr-1" />
+                  Rectangle
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Add circle shape
+                    console.log('Adding circle...');
+                  }}
+                  disabled={!selectedTemplate}
+                >
+                  <Circle className="w-4 h-4 mr-1" />
+                  Circle
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowShapeTools(!showShapeTools)}
+                >
+                  <Settings className="w-4 h-4 mr-1" />
+                  More Shapes
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Add line
+                    console.log('Adding line...');
+                  }}
+                  disabled={!selectedTemplate}
+                >
+                  <Move className="w-4 h-4 mr-1" />
+                  Line
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Image Tools */}
+          <Card className="border-accent/20">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" />
+                Image Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Upload image
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      console.log('Uploading image:', file.name);
+                    }
+                  };
+                  input.click();
+                }}
+                className="w-full"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Image
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowImageTools(!showImageTools)}
+                >
+                  <Settings className="w-4 h-4 mr-1" />
+                  Edit Image
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Add from library
+                    console.log('Opening image library...');
+                  }}
+                >
+                  <ImageIcon className="w-4 h-4 mr-1" />
+                  Library
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Brand Assets */}
+          <Card className="border-accent/20">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Palette className="w-4 h-4" />
+                Brand Assets
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">Brand Colors</Label>
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  {Object.entries(brandColors).map(([name, color]) => (
+                    <button
+                      key={name}
+                      className="w-8 h-8 rounded border-2 border-gray-200 hover:border-gray-400"
+                      style={{ backgroundColor: color }}
+                      title={name}
+                      onClick={() => {
+                        // Apply brand color
+                        console.log('Applying brand color:', name, color);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Quick Actions</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Add logo
+                      console.log('Adding logo...');
+                    }}
+                  >
+                    Logo
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Add watermark
+                      console.log('Adding watermark...');
+                    }}
+                  >
+                    Watermark
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Layer Panel */}
+          {showLayerPanel && (
+            <Card className="border-accent/20">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <Layers className="w-4 h-4" />
+                  Layers
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm text-gray-500">
+                  {textElements.length} text elements
+                </div>
+                <div className="text-sm text-gray-500">
+                  {shapes.length} shapes
+                </div>
+                <div className="text-sm text-gray-500">
+                  {images.length} images
+                </div>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Clear all layers
+                    setTextElements([]);
+                    setShapes([]);
+                    setImages([]);
+                  }}
+                  className="w-full"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Clear All
                 </Button>
               </CardContent>
             </Card>
